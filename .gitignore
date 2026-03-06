@@ -1,0 +1,29 @@
+# Claude Code
+.claude/
+.claude_files/
+CLAUDE.MD
+
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data & model artifacts
+*.csv
+*.parquet
+*.pkl
+*.pt
+*.bin
+*.h5
+
+# OS
+.DS_Store

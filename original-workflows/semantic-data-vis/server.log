@@ -1,0 +1,38 @@
+Traceback (most recent call last):
+  File "/Users/geist/Desktop/Project Hub/automation/semantic-data-vis/server.py", line 30, in <module>
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/socketserver.py", line 457, in __init__
+    self.server_bind()
+    ~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/socketserver.py", line 478, in server_bind
+    self.socket.bind(self.server_address)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 48] Address already in use
+Server running at http://localhost:8000/
+Open http://localhost:8000/viewer.html in your browser
+Press Ctrl+C to stop
+GET /viewer.html HTTP/1.1 200
+GET /analysis-dashboard.html HTTP/1.1 200
+GET /viewer.html HTTP/1.1 200
+GET /config.json HTTP/1.1 200
+404 File not found
+GET /favicon.ico HTTP/1.1 404
+GET /RU_AFR_EXPERIMENT._3d.csv HTTP/1.1 200
+GET /analysis-dashboard.html HTTP/1.1 200
+GET /config.json HTTP/1.1 200
+404 File not found
+GET /favicon.ico HTTP/1.1 404
+GET /LOOKUP-COUNTRIES.TXT HTTP/1.1 200
+GET /RU_AFR_EXPERIMENT._3d.csv HTTP/1.1 200
+GET /analysis-dashboard.html HTTP/1.1 200
+GET /config.json HTTP/1.1 200
+404 File not found
+GET /favicon.ico HTTP/1.1 404
+GET /LOOKUP-COUNTRIES.TXT HTTP/1.1 200
+GET /RU_AFR_EXPERIMENT._3d.csv HTTP/1.1 200
+GET /viewer.html HTTP/1.1 200
+GET /config.json HTTP/1.1 200
+404 File not found
+GET /favicon.ico HTTP/1.1 404
+GET /RU_AFR_EXPERIMENT._3d.csv HTTP/1.1 200

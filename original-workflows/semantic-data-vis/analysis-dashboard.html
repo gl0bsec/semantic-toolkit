@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Data Analysis Dashboard</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background: #fff;
+                color: #000;
+                font-family: "Courier New", monospace;
+                font-size: 10px;
+                overflow: hidden;
+            }
+
+            #header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 33px;
+                background: #fff;
+                border-bottom: 1px solid #aaa;
+                padding: 0 12px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                z-index: 100;
+            }
+
+            #header #title {
+                font-size: 11px;
+                font-weight: bold;
+                letter-spacing: 0.5px;
+                color: #000;
+            }
+
+            #header #title a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            #header #title a:hover {
+                text-decoration: underline;
+            }
+
+            #header-info {
+                font-size: 9px;
+                color: #666;
+            }
+
+            #main-container {
+                position: fixed;
+                top: 33px;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                overflow: auto;
+            }
+
+            /* Fix #8: removed outer padding so grid touches edges;
+       gap provides the only separator lines */
+            #grid {
+                display: grid;
+                grid-template-columns: repeat(12, 1fr);
+                gap: 1px;
+                background: #ccc;
+                min-height: 100%;
+            }
+
+            .grid-item {
+                background: #fff;
+                border: none;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .grid-item-header {
+                font-size: 11px;
+                font-weight: bold;
+                color: #000;
+                padding: 12px;
+                border-bottom: 1px solid #ccc;
+                flex-shrink: 0;
+                background: #fff;
+            }
+
+            /* Fix #1: Single .grid-item-content definition (merged) */
+            .grid-item-content {
+                flex: 1;
+                overflow: auto;
+                max-height: 100%;
+                padding: 12px;
+                background: #fff;
+            }
+
+            .grid-item-content.no-pad {
+                padding: 0;
+            }
+
+            /* Timeline specific styles */
+            #timeline-canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+                cursor: pointer;
+            }
+
+            .loading {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                color: #666;
+                height: 200px;
+            }
+
+            /* Utility classes for grid sizing */
+            .span-3 {
+                grid-column: span 3;
+            }
+            .span-4 {
+                grid-column: span 4;
+            }
+            .span-6 {
+                grid-column: span 6;
+            }
+            .span-8 {
+                grid-column: span 8;
+            }
+            .span-12 {
+                grid-column: span 12;
+            }
+
+            .height-1 {
+                height: 200px;
+            }
+            .height-2 {
+                height: 520px;
+            }
+            .height-3 {
+                height: 460px;
+            }
+
+            /* Scrollbar styling for light theme */
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #f0f0f0;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 0;
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #999;
+            }
+
+            /* Table styles */
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9px;
+            }
+
+            /* Fix #11: Standardized th/td vertical padding to 8px */
+            .data-table th {
+                text-align: left;
+                padding: 8px;
+                background: #f5f5f5;
+                border-bottom: 1px solid #ccc;
+                font-weight: bold;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+
+            .data-table td {
+                padding: 8px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .data-table tr:hover {
+                background: #fafafa;
+                cursor: pointer;
+            }
+
+            /* Fix #5: Unified selection color — neutral light gray across all widgets */
+            .data-table tr.selected {
+                background: #f0f0f0;
+                font-weight: bold;
+            }
+
+            .data-table tr.selected:hover {
+                background: #e8e8e8;
+            }
+
+            .data-table .numeric {
+                text-align: right;
+                font-weight: bold;
+            }
+
+            /* Cluster table specific — only overrides that differ from .data-table */
+            .cluster-table {
+                font-size: 10px;
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+
+            .cluster-table th {
+                font-size: 10px;
+                z-index: 10;
+            }
+
+            .cluster-table td {
+                line-height: 1.3;
+            }
+
+            /* Fix #9: Feed items edge-to-edge borders (no container padding) */
+            .feed-item {
+                border-bottom: 1px solid #eee;
+                padding: 12px;
+                cursor: pointer;
+                transition: background 0.1s;
+            }
+
+            .feed-item:first-child {
+                padding-top: 12px;
+            }
+
+            .feed-item:hover {
+                background: #fafafa;
+            }
+
+            /* Fix #5: Unified selection color for feed items */
+            .feed-item.selected {
+                background: #f0f0f0;
+            }
+
+            .feed-item-title {
+                font-weight: bold;
+                margin-bottom: 4px;
+                line-height: 1.3;
+                color: #000;
+                font-size: 10px;
+            }
+
+            .feed-item-meta {
+                color: #666;
+                margin-bottom: 3px;
+                font-size: 9px;
+            }
+
+            .feed-item-cluster {
+                display: inline-block;
+                padding: 2px 8px;
+                background: #f0f0f0;
+                border: 1px solid #ccc;
+                font-size: 9px;
+                font-weight: bold;
+                margin-top: 4px;
+                color: #000;
+            }
+
+            .feed-item-link {
+                color: #4a90e2;
+                text-decoration: none;
+                font-size: 9px;
+                word-break: break-all;
+            }
+
+            .feed-item-link:hover {
+                text-decoration: underline;
+            }
+
+            /* Fix #4: Feed wrapper uses flex instead of hardcoded max-height */
+            .feed-wrapper {
+                flex: 1;
+                overflow-y: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div id="title">⌂ / <a href="index.html">RU_AFR_EXPERIMENT</a> / ANALYSIS DASHBOARD</div>
+            <div id="header-info">
+                <span id="data-count">Loading...</span>
+            </div>
+        </div>
+
+        <div id="main-container">
+            <div id="grid">
+                <!-- Fix #7: Changed from flex 3:1 to 2:1 split for wider cluster panel -->
+                <!-- Fix #2: Inner divider now 1px solid #ccc, matching grid gap visual weight -->
+                <div
+                    class="grid-item span-12 height-2"
+                    style="display: flex; flex-direction: row; gap: 0"
+                >
+                    <div
+                        style="
+                            flex: 2;
+                            display: flex;
+                            flex-direction: column;
+                            border-right: 1px solid #ccc;
+                            min-width: 0;
+                        "
+                    >
+                        <div class="grid-item-header">
+                            TEMPORAL DISTRIBUTION (June 2025 onward)
+                            <label
+                                style="
+                                    margin-left: 20px;
+                                    font-weight: normal;
+                                    font-size: 9px;
+                                    cursor: pointer;
+                                "
+                            >
+                                <input
+                                    type="checkbox"
+                                    id="stacked-mode-toggle"
+                                    style="margin-right: 4px"
+                                />
+                                Stacked by Type
+                            </label>
+                        </div>
+                        <div style="flex: 1; padding: 12px; min-height: 0">
+                            <canvas id="timeline-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            flex: 1;
+                            display: flex;
+                            flex-direction: column;
+                            min-width: 0;
+                        "
+                    >
+                        <div class="grid-item-header">CLUSTER ANALYSIS</div>
+                        <div
+                            style="
+                                flex: 1;
+                                overflow-y: auto;
+                                overflow-x: hidden;
+                                padding: 0;
+                                min-height: 0;
+                            "
+                        >
+                            <table
+                                class="data-table cluster-table"
+                                id="cluster-table"
+                                style="margin: 0"
+                            >
+                                <thead>
+                                    <tr>
+                                        <th>Cluster</th>
+                                        <th class="numeric">Count</th>
+                                        <th class="numeric">Dist</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cluster-table-body">
+                                    <tr>
+                                        <td
+                                            colspan="3"
+                                            style="
+                                                text-align: center;
+                                                color: #666;
+                                            "
+                                        >
+                                            Loading...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="grid-item span-6 height-3"
+                    id="location-mentions-container"
+                >
+                    <div class="grid-item-header">
+                        EVENT LOCATIONS
+                        <label
+                            style="
+                                margin-left: 20px;
+                                font-weight: normal;
+                                font-size: 9px;
+                                cursor: pointer;
+                            "
+                        >
+                            <input
+                                type="checkbox"
+                                id="african-only-checkbox"
+                                style="margin-right: 4px"
+                            />
+                            African locations only
+                        </label>
+                    </div>
+                    <!-- Fix #9: no-pad class for edge-to-edge table borders -->
+                    <div class="grid-item-content no-pad">
+                        <table
+                            class="data-table cluster-table"
+                            id="location-table"
+                            style="margin: 0"
+                        >
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Location Name</th>
+                                    <th class="numeric">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody id="location-table-body">
+                                <tr>
+                                    <td
+                                        colspan="3"
+                                        style="text-align: center; color: #666"
+                                    >
+                                        Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Fix #4 & #9: Feed uses no-pad content + flex wrapper for proper sizing -->
+                <div class="grid-item span-6 height-3" id="data-feed-container">
+                    <div class="grid-item-header">
+                        DATA FEED (Reverse Chronological)
+                    </div>
+                    <div
+                        class="grid-item-content no-pad"
+                        style="display: flex; flex-direction: column"
+                    >
+                        <div class="feed-wrapper" id="data-feed">
+                            <div
+                                style="
+                                    text-align: center;
+                                    color: #666;
+                                    padding: 20px;
+                                "
+                            >
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Configuration
+            const config = {
+                dataSource: "RU_AFR_EXPERIMENT._3d.csv",
+                startDate: "2025-06-01",
+            };
+
+            // Global state
+            let data = [];
+            let timelineBins = {};
+            let selectedBin = null;
+            let countryLookup = {};
+            let locationMentions = {};
+            let africanOnly = false;
+            let clusterData = {};
+
+            // Filter state
+            let selectedWeek = null;
+            let selectedLocation = null;
+            let selectedCluster = null;
+            let stackedMode = false;
+
+            // Type color palette for stacked mode
+            const typeColors = {
+                SEC: "#ff6b6b",
+                GOV: "#4ecdc4",
+                MIL: "#e17055",
+                ECO: "#fdcb6e",
+                SOC: "#a29bfe",
+                DIP: "#00cec9",
+                ENV: "#96ceb4",
+                TEC: "#74b9ff",
+                CUL: "#fd79a8",
+                SPO: "#55efc4",
+                INFO: "#ffeb3b",
+            };
+
+            // African country codes (ISO 3166-1 alpha-3 and FIPS)
+            const africanCountries = new Set([
+                "DZA",
+                "AGO",
+                "BEN",
+                "BWA",
+                "BFA",
+                "BDI",
+                "CMR",
+                "CPV",
+                "CAF",
+                "TCD",
+                "COM",
+                "COG",
+                "COD",
+                "CIV",
+                "DJI",
+                "EGY",
+                "GNQ",
+                "ERI",
+                "ETH",
+                "GAB",
+                "GMB",
+                "GHA",
+                "GIN",
+                "GNB",
+                "KEN",
+                "LSO",
+                "LBR",
+                "LBY",
+                "MDG",
+                "MWI",
+                "MLI",
+                "MRT",
+                "MUS",
+                "MAR",
+                "MOZ",
+                "NAM",
+                "NER",
+                "NGA",
+                "RWA",
+                "STP",
+                "SEN",
+                "SYC",
+                "SLE",
+                "SOM",
+                "ZAF",
+                "SSD",
+                "SDN",
+                "SWZ",
+                "TZA",
+                "TGO",
+                "TUN",
+                "UGA",
+                "ZMB",
+                "ZWE",
+                // FIPS codes
+                "AG",
+                "AO",
+                "BN",
+                "BC",
+                "UV",
+                "BY",
+                "CM",
+                "CV",
+                "CT",
+                "CD",
+                "CN",
+                "CF",
+                "CG",
+                "IV",
+                "DJ",
+                "EG",
+                "EK",
+                "ER",
+                "ET",
+                "GB",
+                "GA",
+                "GH",
+                "PU",
+                "KE",
+                "LT",
+                "LI",
+                "LY",
+                "MA",
+                "MI",
+                "ML",
+                "MR",
+                "MP",
+                "MO",
+                "MZ",
+                "WA",
+                "NG",
+                "NI",
+                "RW",
+                "TP",
+                "SG",
+                "SE",
+                "SL",
+                "SO",
+                "SF",
+                "OD",
+                "SU",
+                "WZ",
+                "TZ",
+                "TO",
+                "TS",
+                "UG",
+                "ZA",
+                "ZI",
+                // Special
+                "AFR",
+            ]);
+
+            // Data loading and parsing
+            async function loadConfig() {
+                try {
+                    const response = await fetch("config.json");
+                    const loadedConfig = await response.json();
+                    Object.assign(config, loadedConfig);
+                } catch (e) {
+                    console.log("Using default config");
+                }
+            }
+
+            function parseCSVLine(line) {
+                const fields = [];
+                let current = "";
+                let inQuotes = false;
+
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === "," && !inQuotes) {
+                        fields.push(current.trim());
+                        current = "";
+                    } else {
+                        current += char;
+                    }
+                }
+                fields.push(current.trim());
+                return fields;
+            }
+
+            async function loadCountryLookup() {
+                try {
+                    const response = await fetch("LOOKUP-COUNTRIES.TXT");
+                    const text = await response.text();
+                    const lines = text.trim().split("\n");
+
+                    lines.forEach((line) => {
+                        const parts = line.split("\t");
+                        if (parts.length >= 2) {
+                            const code = parts[0].trim();
+                            const name = parts[1].trim();
+                            if (code && name) {
+                                countryLookup[code] = name;
+                            }
+                        }
+                    });
+
+                    console.log(
+                        `Loaded ${Object.keys(countryLookup).length} location codes`,
+                    );
+                } catch (e) {
+                    console.error("Error loading location lookup:", e);
+                }
+            }
+
+            async function loadData() {
+                try {
+                    const response = await fetch(config.dataSource);
+                    const text = await response.text();
+                    const lines = text.trim().split("\n");
+
+                    if (lines.length < 2) {
+                        console.error("No data found");
+                        return;
+                    }
+
+                    const headers = parseCSVLine(lines[0]);
+                    const dateIdx = headers.indexOf("Date");
+                    const titleIdx = headers.indexOf("title");
+                    const typeIdx = headers.indexOf("Type");
+                    const clusterIdx = headers.indexOf("cluster");
+                    const locationIdx = headers.indexOf("event_locations");
+                    const vec0Idx = headers.indexOf("map_vector_0");
+                    const vec1Idx = headers.indexOf("map_vector_1");
+                    const vec2Idx = headers.indexOf("map_vector_2");
+
+                    data = [];
+                    locationMentions = {};
+                    clusterData = {};
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const fields = parseCSVLine(lines[i]);
+                        if (fields.length < headers.length) continue;
+
+                        const dateStr = fields[dateIdx];
+                        const date = parseDate(dateStr);
+
+                        if (!date || date < new Date(config.startDate))
+                            continue;
+
+                        const locationStr = fields[locationIdx] || "";
+                        const cluster = parseInt(fields[clusterIdx]) || -1;
+                        const vec0 = parseFloat(fields[vec0Idx]) || 0;
+                        const vec1 = parseFloat(fields[vec1Idx]) || 0;
+                        const vec2 = parseFloat(fields[vec2Idx]) || 0;
+
+                        const locations = locationStr
+                            .split("|")
+                            .map((c) => c.trim())
+                            .filter((c) => c);
+
+                        locations.forEach((code) => {
+                            locationMentions[code] =
+                                (locationMentions[code] || 0) + 1;
+                        });
+
+                        if (!clusterData[cluster]) {
+                            clusterData[cluster] = {
+                                count: 0,
+                                vectors: [],
+                                centroid: [0, 0, 0],
+                            };
+                        }
+                        clusterData[cluster].count++;
+                        clusterData[cluster].vectors.push([vec0, vec1, vec2]);
+
+                        data.push({
+                            date: date,
+                            dateStr: dateStr,
+                            title: fields[titleIdx] || "Untitled",
+                            type: fields[typeIdx] || "Unknown",
+                            cluster: cluster,
+                            locations: locations,
+                            vector: [vec0, vec1, vec2],
+                        });
+                    }
+
+                    // Calculate cluster centroids
+                    Object.keys(clusterData).forEach((clusterId) => {
+                        const cluster = clusterData[clusterId];
+                        const n = cluster.vectors.length;
+                        cluster.centroid = [
+                            cluster.vectors.reduce((sum, v) => sum + v[0], 0) /
+                                n,
+                            cluster.vectors.reduce((sum, v) => sum + v[1], 0) /
+                                n,
+                            cluster.vectors.reduce((sum, v) => sum + v[2], 0) /
+                                n,
+                        ];
+                    });
+
+                    console.log(
+                        `Loaded ${data.length} entries from ${config.startDate} onward`,
+                    );
+                    console.log(
+                        `Found ${Object.keys(locationMentions).length} unique locations`,
+                    );
+                    document.getElementById("data-count").textContent =
+                        `${data.length} entries`;
+
+                    processTimeline();
+                    renderTimeline();
+                    renderLocationTable();
+                    renderDataFeed();
+                    renderClusterTable();
+                } catch (e) {
+                    console.error("Error loading data:", e);
+                }
+            }
+
+            function parseDate(dateStr) {
+                if (!dateStr) return null;
+                const parts = dateStr.split("/");
+                if (parts.length !== 3) return null;
+                const month = parseInt(parts[0]) - 1;
+                const day = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+                return new Date(year, month, day);
+            }
+
+            function processTimeline() {
+                timelineBins = {};
+                const startDate = new Date(config.startDate);
+
+                data.forEach((entry) => {
+                    const weekNum = Math.floor(
+                        (entry.date - startDate) / (7 * 24 * 60 * 60 * 1000),
+                    );
+                    const binDate = new Date(
+                        startDate.getTime() + weekNum * 7 * 24 * 60 * 60 * 1000,
+                    );
+                    const key = formatDate(binDate);
+
+                    if (!timelineBins[key]) {
+                        timelineBins[key] = {
+                            date: binDate,
+                            count: 0,
+                            entries: [],
+                        };
+                    }
+                    timelineBins[key].count++;
+                    timelineBins[key].entries.push(entry);
+                });
+            }
+
+            function formatDate(date) {
+                const year = String(date.getFullYear()).slice(-2);
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            }
+
+            function getWeekKey(date) {
+                const startDate = new Date(config.startDate);
+                const weekNum = Math.floor(
+                    (date - startDate) / (7 * 24 * 60 * 60 * 1000),
+                );
+                const binDate = new Date(
+                    startDate.getTime() + weekNum * 7 * 24 * 60 * 60 * 1000,
+                );
+                return formatDate(binDate);
+            }
+
+            function getFilteredData() {
+                let filtered = [...data];
+
+                if (selectedWeek) {
+                    filtered = filtered.filter(
+                        (d) => getWeekKey(d.date) === selectedWeek,
+                    );
+                }
+
+                if (selectedLocation) {
+                    filtered = filtered.filter((d) =>
+                        d.locations.includes(selectedLocation),
+                    );
+                }
+
+                if (selectedCluster !== null) {
+                    filtered = filtered.filter(
+                        (d) => d.cluster === selectedCluster,
+                    );
+                }
+
+                return filtered;
+            }
+
+            function updateAllViews() {
+                renderTimeline();
+                renderLocationTable();
+                renderDataFeed();
+                renderClusterTable();
+                broadcastFilters();
+            }
+
+            function broadcastFilters() {
+                const filters = {
+                    selectedWeek: selectedWeek,
+                    selectedLocation: selectedLocation,
+                    selectedCluster: selectedCluster,
+                    timestamp: Date.now(),
+                };
+                localStorage.setItem(
+                    "dashboardFilters",
+                    JSON.stringify(filters),
+                );
+            }
+
+            function renderLocationTable() {
+                const tbody = document.getElementById("location-table-body");
+                const filteredData = getFilteredData();
+
+                const filteredLocationMentions = {};
+                filteredData.forEach((entry) => {
+                    entry.locations.forEach((code) => {
+                        filteredLocationMentions[code] =
+                            (filteredLocationMentions[code] || 0) + 1;
+                    });
+                });
+
+                let locations = Object.keys(filteredLocationMentions)
+                    .map((code) => ({
+                        code: code,
+                        name: countryLookup[code] || "Unknown",
+                        count: filteredLocationMentions[code],
+                    }))
+                    .sort((a, b) => b.count - a.count);
+
+                if (africanOnly) {
+                    locations = locations.filter((loc) =>
+                        africanCountries.has(loc.code),
+                    );
+                }
+
+                if (locations.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="3" style="text-align: center; color: #666;">No data</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = locations
+                    .map(
+                        (loc) => `
+        <tr data-location="${loc.code}" class="${selectedLocation === loc.code ? "selected" : ""}">
+          <td><strong>${loc.code}</strong></td>
+          <td>${loc.name}</td>
+          <td class="numeric">${loc.count}</td>
+        </tr>
+      `,
+                    )
+                    .join("");
+            }
+
+            function renderDataFeed() {
+                const feed = document.getElementById("data-feed");
+                const filteredData = getFilteredData();
+
+                const sortedData = [...filteredData].sort(
+                    (a, b) => b.date - a.date,
+                );
+
+                if (sortedData.length === 0) {
+                    feed.innerHTML =
+                        '<div style="text-align: center; color: #666; padding: 20px;">No data</div>';
+                    return;
+                }
+
+                feed.innerHTML = sortedData
+                    .map((item, idx) => {
+                        const locationNames = item.locations
+                            .map((loc) => countryLookup[loc] || loc)
+                            .join(", ");
+
+                        return `
+          <div class="feed-item" data-index="${idx}" data-cluster="${item.cluster}">
+            <div class="feed-item-title">${item.title}</div>
+            <div class="feed-item-meta">
+              <strong>Date:</strong> ${item.dateStr} |
+              <strong>Type:</strong> ${item.type} |
+              <strong>Locations:</strong> ${locationNames || "N/A"}
+            </div>
+            <div class="feed-item-cluster">Cluster ${item.cluster}</div>
+          </div>
+        `;
+                    })
+                    .join("");
+            }
+
+            function euclideanDistance(v1, v2) {
+                return Math.sqrt(
+                    Math.pow(v1[0] - v2[0], 2) +
+                        Math.pow(v1[1] - v2[1], 2) +
+                        Math.pow(v1[2] - v2[2], 2),
+                );
+            }
+
+            function renderClusterTable() {
+                const tbody = document.getElementById("cluster-table-body");
+                const filteredData = getFilteredData();
+
+                const filteredClusterCounts = {};
+                filteredData.forEach((entry) => {
+                    filteredClusterCounts[entry.cluster] =
+                        (filteredClusterCounts[entry.cluster] || 0) + 1;
+                });
+
+                const clusters = Object.keys(filteredClusterCounts).map(
+                    (id) => ({
+                        id: parseInt(id),
+                        count: filteredClusterCounts[id],
+                        centroid: clusterData[id].centroid,
+                    }),
+                );
+
+                if (clusters.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="3" style="text-align: center; color: #666;">No data</td></tr>';
+                    return;
+                }
+
+                clusters.forEach((cluster) => {
+                    const distances = clusters
+                        .filter((c) => c.id !== cluster.id)
+                        .map((c) =>
+                            euclideanDistance(cluster.centroid, c.centroid),
+                        );
+                    cluster.avgDistance =
+                        distances.length > 0
+                            ? distances.reduce((sum, d) => sum + d, 0) /
+                              distances.length
+                            : 0;
+                });
+
+                clusters.sort((a, b) => a.avgDistance - b.avgDistance);
+
+                tbody.innerHTML = clusters
+                    .map(
+                        (cluster) => `
+        <tr data-cluster="${cluster.id}" class="${selectedCluster === cluster.id ? "selected" : ""}">
+          <td><strong>Cluster ${cluster.id}</strong></td>
+          <td class="numeric">${cluster.count}</td>
+          <td class="numeric">${cluster.avgDistance.toFixed(2)}</td>
+        </tr>
+      `,
+                    )
+                    .join("");
+            }
+
+            // Fix #3: Retina DPI support for canvas rendering
+            function setupCanvas(canvas, width, height) {
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = width + "px";
+                canvas.style.height = height + "px";
+                const ctx = canvas.getContext("2d");
+                ctx.scale(dpr, dpr);
+                return ctx;
+            }
+
+            function renderTimeline() {
+                const canvas = document.getElementById("timeline-canvas");
+                const container = canvas.parentElement;
+
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                if (width === 0 || height === 0) return;
+
+                // Fix #3: Use DPI-aware canvas setup
+                const ctx = setupCanvas(canvas, width, height);
+                ctx.clearRect(0, 0, width, height);
+
+                const filteredData = getFilteredData();
+
+                if (stackedMode) {
+                    const filteredBins = {};
+                    const typesInData = new Set();
+                    filteredData.forEach((entry) => {
+                        const weekKey = getWeekKey(entry.date);
+                        if (!filteredBins[weekKey]) {
+                            filteredBins[weekKey] = {
+                                date: entry.date,
+                                types: {},
+                            };
+                        }
+                        const type = entry.type || "Unknown";
+                        filteredBins[weekKey].types[type] =
+                            (filteredBins[weekKey].types[type] || 0) + 1;
+                        typesInData.add(type);
+                    });
+
+                    const bins = Object.keys(filteredBins).sort();
+                    if (bins.length === 0) return;
+
+                    const maxCount = Math.max(
+                        ...Object.values(filteredBins).map((bin) =>
+                            Object.values(bin.types).reduce(
+                                (sum, count) => sum + count,
+                                0,
+                            ),
+                        ),
+                    );
+                    const barWidth = (width - 40) / bins.length;
+                    const maxBarHeight = height - 76;
+
+                    ctx.font = "9px Courier New";
+                    ctx.textAlign = "center";
+
+                    bins.forEach((key, i) => {
+                        const bin = filteredBins[key];
+                        const x = 20 + i * barWidth;
+
+                        const totalCount = Object.values(bin.types).reduce(
+                            (sum, count) => sum + count,
+                            0,
+                        );
+                        const types = Object.keys(bin.types).sort();
+
+                        let cumulativeY = height - 56;
+                        types.forEach((type) => {
+                            const count = bin.types[type];
+                            const segmentHeight =
+                                (count / maxCount) * maxBarHeight;
+                            const y = cumulativeY - segmentHeight;
+
+                            ctx.fillStyle = typeColors[type] || "#999";
+
+                            if (selectedWeek === key) {
+                                ctx.globalAlpha = 0.7;
+                            }
+
+                            ctx.fillRect(
+                                x,
+                                y,
+                                Math.max(barWidth - 2, 1),
+                                segmentHeight,
+                            );
+
+                            ctx.globalAlpha = 1.0;
+                            cumulativeY = y;
+                        });
+
+                        if (barWidth > 20) {
+                            ctx.fillStyle = "#000";
+                            const totalBarHeight =
+                                (totalCount / maxCount) * maxBarHeight;
+                            ctx.fillText(
+                                totalCount,
+                                x + barWidth / 2,
+                                height - 56 - totalBarHeight - 4,
+                            );
+                        }
+
+                        if (
+                            i % Math.max(1, Math.floor(bins.length / 10)) ===
+                            0
+                        ) {
+                            ctx.fillStyle = "#666";
+                            ctx.save();
+                            ctx.translate(x + barWidth / 2, height - 45);
+                            ctx.rotate(-Math.PI / 4);
+                            ctx.textAlign = "right";
+                            ctx.fillText(key, 0, 0);
+                            ctx.restore();
+                        }
+                    });
+
+                    // Draw baseline
+                    ctx.strokeStyle = "#ccc";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(20, height - 56);
+                    ctx.lineTo(width - 20, height - 56);
+                    ctx.stroke();
+
+                    // Fix #6: Legend with background rect and dynamic positioning
+                    const legendTypes = Array.from(typesInData).sort();
+                    const rowHeight = 14;
+                    const legendPadding = 8;
+                    const legendW = 80;
+                    const legendH =
+                        legendTypes.length * rowHeight + legendPadding * 2;
+                    const legendX = width - legendW - legendPadding;
+                    const legendY = 4;
+
+                    // Background rect to prevent overlap with bars
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+                    ctx.fillRect(
+                        legendX - legendPadding,
+                        legendY,
+                        legendW + legendPadding * 2,
+                        legendH,
+                    );
+                    ctx.strokeStyle = "#ccc";
+                    ctx.strokeRect(
+                        legendX - legendPadding,
+                        legendY,
+                        legendW + legendPadding * 2,
+                        legendH,
+                    );
+
+                    ctx.font = "9px Courier New";
+                    ctx.textAlign = "left";
+
+                    legendTypes.forEach((type, i) => {
+                        const y = legendY + legendPadding + i * rowHeight;
+
+                        ctx.fillStyle = typeColors[type] || "#999";
+                        ctx.fillRect(legendX, y, 10, 10);
+
+                        ctx.fillStyle = "#000";
+                        ctx.fillText(type, legendX + 14, y + 9);
+                    });
+
+                    // Store bins for click detection (use CSS coordinates, not canvas pixel coordinates)
+                    canvas.bins = bins.map((key, i) => ({
+                        key,
+                        x: 20 + i * barWidth,
+                        width: barWidth,
+                    }));
+                } else {
+                    // Regular mode
+                    const filteredBins = {};
+                    filteredData.forEach((entry) => {
+                        const weekKey = getWeekKey(entry.date);
+                        if (!filteredBins[weekKey]) {
+                            filteredBins[weekKey] = {
+                                count: 0,
+                                date: entry.date,
+                            };
+                        }
+                        filteredBins[weekKey].count++;
+                    });
+
+                    const bins = Object.keys(filteredBins).sort();
+                    if (bins.length === 0) return;
+
+                    const maxCount = Math.max(
+                        ...Object.values(filteredBins).map((b) => b.count),
+                    );
+                    const barWidth = (width - 40) / bins.length;
+                    const maxBarHeight = height - 76;
+
+                    ctx.font = "9px Courier New";
+                    ctx.textAlign = "center";
+
+                    bins.forEach((key, i) => {
+                        const bin = filteredBins[key];
+                        const x = 20 + i * barWidth;
+                        const barHeight = (bin.count / maxCount) * maxBarHeight;
+                        const y = height - 56 - barHeight;
+
+                        ctx.fillStyle =
+                            selectedWeek === key ? "#ff6b6b" : "#000";
+                        ctx.fillRect(
+                            x,
+                            y,
+                            Math.max(barWidth - 2, 1),
+                            barHeight,
+                        );
+
+                        if (barWidth > 20) {
+                            ctx.fillStyle = "#000";
+                            ctx.fillText(bin.count, x + barWidth / 2, y - 4);
+                        }
+
+                        if (
+                            i % Math.max(1, Math.floor(bins.length / 10)) ===
+                            0
+                        ) {
+                            ctx.fillStyle = "#666";
+                            ctx.save();
+                            ctx.translate(x + barWidth / 2, height - 45);
+                            ctx.rotate(-Math.PI / 4);
+                            ctx.textAlign = "right";
+                            ctx.fillText(key, 0, 0);
+                            ctx.restore();
+                        }
+                    });
+
+                    // Draw baseline
+                    ctx.strokeStyle = "#ccc";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(20, height - 56);
+                    ctx.lineTo(width - 20, height - 56);
+                    ctx.stroke();
+
+                    canvas.bins = bins.map((key, i) => ({
+                        key,
+                        x: 20 + i * barWidth,
+                        width: barWidth,
+                    }));
+                }
+            }
+
+            // Event handlers
+            document
+                .getElementById("timeline-canvas")
+                .addEventListener("click", (e) => {
+                    const canvas = e.target;
+                    const rect = canvas.getBoundingClientRect();
+                    // Fix #3: Use CSS pixel coordinates for click detection (matching bin positions)
+                    const x = e.clientX - rect.left;
+
+                    if (!canvas.bins) return;
+
+                    for (let bin of canvas.bins) {
+                        if (x >= bin.x && x < bin.x + bin.width) {
+                            if (selectedWeek === bin.key) {
+                                selectedWeek = null;
+                            } else {
+                                selectedWeek = bin.key;
+                            }
+                            updateAllViews();
+                            break;
+                        }
+                    }
+                });
+
+            // Fix #10: ResizeObserver for robust canvas resizing
+            const timelineContainer =
+                document.getElementById("timeline-canvas").parentElement;
+            const resizeObserver = new ResizeObserver(() => {
+                renderTimeline();
+            });
+            resizeObserver.observe(timelineContainer);
+
+            // Click handlers for tables and feed
+            document.addEventListener("click", (e) => {
+                const locationRow = e.target.closest("tr[data-location]");
+                if (locationRow) {
+                    const locationCode =
+                        locationRow.getAttribute("data-location");
+                    if (selectedLocation === locationCode) {
+                        selectedLocation = null;
+                    } else {
+                        selectedLocation = locationCode;
+                    }
+                    updateAllViews();
+                    return;
+                }
+
+                const clusterRow = e.target.closest("tr[data-cluster]");
+                if (clusterRow) {
+                    const clusterId = parseInt(
+                        clusterRow.getAttribute("data-cluster"),
+                    );
+                    if (selectedCluster === clusterId) {
+                        selectedCluster = null;
+                    } else {
+                        selectedCluster = clusterId;
+                    }
+                    updateAllViews();
+                    return;
+                }
+
+                const feedItem = e.target.closest(".feed-item[data-cluster]");
+                if (feedItem) {
+                    const clusterId = parseInt(
+                        feedItem.getAttribute("data-cluster"),
+                    );
+                    if (selectedCluster === clusterId) {
+                        selectedCluster = null;
+                    } else {
+                        selectedCluster = clusterId;
+                    }
+                    updateAllViews();
+                    return;
+                }
+            });
+
+            // Checkbox handlers
+            document.addEventListener("change", (e) => {
+                if (e.target.id === "african-only-checkbox") {
+                    africanOnly = e.target.checked;
+                    renderLocationTable();
+                }
+
+                if (e.target.id === "stacked-mode-toggle") {
+                    stackedMode = e.target.checked;
+                    renderTimeline();
+                }
+            });
+
+            // Initialize
+            async function init() {
+                await loadConfig();
+                await loadCountryLookup();
+                await loadData();
+                broadcastFilters();
+            }
+
+            init();
+        </script>
+    </body>
+</html>

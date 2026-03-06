@@ -1,0 +1,27 @@
+{
+  "name": "RU_AFR_EXPERIMENT",
+  "dataSource": "RU_AFR_EXPERIMENT._3d.csv",
+  "lookupSource": "LOOKUP-COUNTRIES.TXT",
+  "columns": {
+    "x": "map_vector_0",
+    "y": "map_vector_1",
+    "z": "map_vector_2",
+    "title": ["title", "text_name"],
+    "date": ["Date", "first_event_date"],
+    "url": "SOURCEURL",
+    "cluster": "cluster",
+    "locations": "event_locations",
+    "type": "Type"
+  },
+  "pointSize": { "min": 1, "max": 4, "scale": 0.25 },
+  "timeline": { "startDate": "2025-07-01" },
+  "regionFilter": {
+    "label": "African locations only",
+    "codes": [
+      "AG","AO","BC","BN","BY","CD","CF","CG","CM","CN","CV","DJ","DZ","EG","EK","ER","ET",
+      "GA","GB","GH","GV","IV","KE","LI","LT","LY","MA","MI","ML","MO","MP","MR","MZ","NI",
+      "NG","OD","PU","RW","SE","SF","SG","SL","SO","SU","TP","TO","TS","TZ","UG","UV","WA",
+      "WZ","ZA","ZI","AFR"
+    ]
+  }
+}

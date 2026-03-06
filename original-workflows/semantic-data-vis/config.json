@@ -1,0 +1,11 @@
+{
+  "dataSource": "RU_AFR_EXPERIMENT._3d.csv",
+  "pointSize": {
+    "min": 1,
+    "max": 4,
+    "scale": 0.25
+  },
+  "timeline": {
+    "startDate": "2025-07-01"
+  }
+}

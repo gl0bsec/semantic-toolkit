@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>RU_AFR_EXPERIMENT</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background: #fff;
+                color: #000;
+                font-family: "Courier New", monospace;
+                font-size: 10px;
+            }
+
+            #header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 33px;
+                background: #fff;
+                border-bottom: 1px solid #aaa;
+                padding: 0 12px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                z-index: 100;
+            }
+
+            #header #title {
+                font-size: 11px;
+                font-weight: bold;
+                letter-spacing: 0.5px;
+                color: #000;
+            }
+
+            #main-container {
+                position: fixed;
+                top: 33px;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                overflow: auto;
+                padding: 24px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                border: 1px solid #ccc;
+            }
+
+            thead th {
+                font-size: 9px;
+                font-weight: bold;
+                text-align: left;
+                padding: 8px 12px;
+                border-bottom: 1px solid #ccc;
+                background: #f5f5f5;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            tbody tr {
+                border-bottom: 1px solid #eee;
+                cursor: pointer;
+            }
+
+            tbody tr:last-child {
+                border-bottom: none;
+            }
+
+            tbody tr:hover {
+                background: #fafafa;
+            }
+
+            tbody td {
+                padding: 12px;
+                vertical-align: top;
+            }
+
+            .page-name {
+                font-size: 11px;
+                font-weight: bold;
+                color: #000;
+                text-decoration: none;
+                letter-spacing: 0.5px;
+            }
+
+            .page-name:hover {
+                text-decoration: underline;
+            }
+
+            .page-type {
+                font-size: 9px;
+                color: #666;
+                padding-top: 2px;
+            }
+
+            .page-modified {
+                font-size: 9px;
+                color: #444;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div id="title">⌂ / RU_AFR_EXPERIMENT</div>
+        </div>
+
+        <div id="main-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 220px">View</th>
+                        <th style="width: 140px">Modified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr onclick="location.href='viewer.html'">
+                        <td>
+                            <a class="page-name" href="viewer.html">viewer</a>
+                        </td>
+                        <td class="page-modified">26-03-05</td>
+                    </tr>
+                    <tr onclick="location.href='analysis-dashboard.html'">
+                        <td>
+                            <a class="page-name" href="analysis-dashboard.html">analysis-dashboard</a>
+                        </td>
+                        <td class="page-modified">26-03-05</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>
