@@ -32,7 +32,7 @@ async function init() {
         // Set header links
         document.getElementById('dataset-link').textContent = dataset;
         document.getElementById('dataset-link').href = `/${dataset}/index.html`;
-        document.getElementById('sibling-link').href = `/ui/src/viewer/viewer.html?dataset=${dataset}`;
+        document.getElementById('sibling-link').href = `/ui/data-views/viewer/viewer.html?dataset=${dataset}`;
 
         // Load config and lookup
         config = await fetchConfig(dataset);

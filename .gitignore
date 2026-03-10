@@ -27,6 +27,7 @@ build/
 
 # Node
 node_modules/
+toolkit/analysis/node_modules
 
 # OS
 .DS_Store

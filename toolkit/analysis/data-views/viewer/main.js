@@ -28,7 +28,7 @@ async function init() {
         // Set header links
         document.getElementById('dataset-link').textContent = dataset;
         document.getElementById('dataset-link').href = `/${dataset}/index.html`;
-        document.getElementById('sibling-link').href = `/ui/src/dashboard/dashboard.html?dataset=${dataset}`;
+        document.getElementById('sibling-link').href = `/ui/data-views/dashboard/dashboard.html?dataset=${dataset}`;
 
         // Load config
         config = await fetchConfig(dataset);

@@ -1,15 +1,18 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
+const DATA_VIEWS = resolve(__dirname, '../analysis/data-views');
+
 export default defineConfig({
-  base: '/ui/',
+  root: DATA_VIEWS,
+  base: '/ui/data-views/',
   build: {
-    outDir: 'dist',
+    outDir: resolve(__dirname, 'dist/data-views'),
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        viewer: resolve(__dirname, 'src/viewer/viewer.html'),
-        dashboard: resolve(__dirname, 'src/dashboard/dashboard.html'),
+        viewer: resolve(DATA_VIEWS, 'viewer/viewer.html'),
+        dashboard: resolve(DATA_VIEWS, 'dashboard/dashboard.html'),
       },
     },
   },

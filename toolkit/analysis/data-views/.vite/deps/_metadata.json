@@ -1,0 +1,52 @@
+{
+  "hash": "9d49f31e",
+  "configHash": "10b04aa7",
+  "lockfileHash": "ef977547",
+  "browserHash": "44914bdb",
+  "optimized": {
+    "d3-array": {
+      "src": "../../../../UI/node_modules/d3-array/src/index.js",
+      "file": "d3-array.js",
+      "fileHash": "5faa8d8a",
+      "needsInterop": false
+    },
+    "d3-scale": {
+      "src": "../../../../UI/node_modules/d3-scale/src/index.js",
+      "file": "d3-scale.js",
+      "fileHash": "6a2805a2",
+      "needsInterop": false
+    },
+    "d3-selection": {
+      "src": "../../../../UI/node_modules/d3-selection/src/index.js",
+      "file": "d3-selection.js",
+      "fileHash": "23fb3c66",
+      "needsInterop": false
+    },
+    "d3-shape": {
+      "src": "../../../../UI/node_modules/d3-shape/src/index.js",
+      "file": "d3-shape.js",
+      "fileHash": "fcbe5da5",
+      "needsInterop": false
+    },
+    "three": {
+      "src": "../../../../UI/node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "dd569838",
+      "needsInterop": false
+    },
+    "three/addons/controls/OrbitControls.js": {
+      "src": "../../../../UI/node_modules/three/examples/jsm/controls/OrbitControls.js",
+      "file": "three_addons_controls_OrbitControls__js.js",
+      "fileHash": "3f573ca9",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-KQ7OROF7": {
+      "file": "chunk-KQ7OROF7.js"
+    },
+    "chunk-HF3Y36VM": {
+      "file": "chunk-HF3Y36VM.js"
+    }
+  }
+}

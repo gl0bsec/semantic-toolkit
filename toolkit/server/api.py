@@ -22,7 +22,7 @@ SERVER_DIR = Path(__file__).parent
 TOOLKIT_DIR = SERVER_DIR.parent
 sys.path.insert(0, str(TOOLKIT_DIR.parent))
 
-from toolkit.ingest import load_config, load_lookup, parse_csv
+from toolkit.ingest import load_config, load_lookup, load_records
 
 
 def _get_dataset_dir(query: dict, datasets_dir: Path) -> Path | None:
@@ -69,7 +69,7 @@ def handle_api(path: str, datasets_dir: Path) -> tuple[int, str, bytes]:
         start_date_str = config.get("timeline", {}).get("startDate")
         start_date = date.fromisoformat(start_date_str) if start_date_str else None
 
-        records = parse_csv(csv_path, config["columns"], start_date=start_date)
+        records = load_records(csv_path, config["columns"], start_date=start_date)
         payload = [r.to_dict() for r in records]
         return 200, "application/json", json.dumps(payload).encode()
 
