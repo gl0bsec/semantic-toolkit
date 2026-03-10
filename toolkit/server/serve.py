@@ -20,6 +20,7 @@ SERVER_DIR = Path(__file__).parent
 TOOLKIT_DIR = SERVER_DIR.parent
 ANALYSIS_DIR = TOOLKIT_DIR / "analysis"
 DATASETS_DIR = TOOLKIT_DIR.parent / "datasets"
+UI_DIR = TOOLKIT_DIR / "UI"
 
 # Ensure repo root is on the path so toolkit.* imports work
 REPO_ROOT = str(TOOLKIT_DIR.parent)
@@ -66,6 +67,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path.startswith("/datasets/"):
             rel = path[len("/datasets/"):]
             return str(DATASETS_DIR / rel)
+
+        if path.startswith("/ui/"):
+            rel = path[len("/ui/"):]
+            return str(UI_DIR / "dist" / rel)
+
+        if path.startswith("/home/"):
+            rel = path[len("/home/"):]
+            return str(UI_DIR / "home" / rel)
 
         rel = path.lstrip("/")
         return str(ANALYSIS_DIR / rel)

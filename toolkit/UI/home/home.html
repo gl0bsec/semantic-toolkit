@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>RU_AFR_EXPERIMENT</title>
+        <title>Home</title>
         <style>
             * {
                 box-sizing: border-box;
@@ -85,7 +85,7 @@
                 vertical-align: top;
             }
 
-            .page-name {
+            .dataset-name {
                 font-size: 11px;
                 font-weight: bold;
                 color: #000;
@@ -93,47 +93,63 @@
                 letter-spacing: 0.5px;
             }
 
-            .page-name:hover {
+            .dataset-name:hover {
                 text-decoration: underline;
             }
 
-            .page-type {
-                font-size: 9px;
-                color: #666;
-                padding-top: 2px;
-            }
-
-            .page-modified {
+            .col-modified {
                 font-size: 9px;
                 color: #444;
+            }
+
+            tr.new-pipe {
+                background: #f5f5f5;
+                cursor: default;
+            }
+
+            tr.new-pipe:hover {
+                background: #f0f0f0;
+            }
+
+            tr.new-pipe td {
+                color: #999;
+                font-size: 9px;
+                letter-spacing: 0.5px;
             }
         </style>
     </head>
     <body>
         <div id="header">
-            <div id="title">⌂ / RU_AFR_EXPERIMENT</div>
+            <div id="title">⌂</div>
         </div>
 
         <div id="main-container">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 220px">View</th>
+                        <th style="width: 220px">Dataset</th>
+                        <th style="width: 80px">Type</th>
+                        <th style="width: 140px">Created</th>
                         <th style="width: 140px">Modified</th>
+                        <th style="width: 80px">Views</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr onclick="location.href='../viewer/viewer.html?dataset=RU_AFR_EXPERIMENT'">
+                    <tr onclick="location.href='../RU_AFR_EXPERIMENT/index.html'">
                         <td>
-                            <a class="page-name" href="../viewer/viewer.html?dataset=RU_AFR_EXPERIMENT">viewer</a>
+                            <a class="dataset-name" href="../RU_AFR_EXPERIMENT/index.html">RU_AFR_EXPERIMENT</a>
                         </td>
-                        <td class="page-modified">26-03-05</td>
+                        <td class="col-modified">csv</td>
+                        <td class="col-modified">26-02-03</td>
+                        <td class="col-modified">26-03-05</td>
+                        <td class="col-modified">2</td>
                     </tr>
-                    <tr onclick="location.href='../dashboard/dashboard.html?dataset=RU_AFR_EXPERIMENT'">
-                        <td>
-                            <a class="page-name" href="../dashboard/dashboard.html?dataset=RU_AFR_EXPERIMENT">dashboard</a>
-                        </td>
-                        <td class="page-modified">26-03-05</td>
+                    <tr class="new-pipe">
+                        <td>+ create new pipeline</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
                     </tr>
                 </tbody>
             </table>

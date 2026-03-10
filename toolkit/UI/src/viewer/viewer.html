@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RU_AFR Semantic Data Visualization</title>
+    <title>3D Semantic Space</title>
     <style>
         * {
             margin: 0;
@@ -65,6 +65,16 @@
             cursor: pointer;
         }
 
+        #controls a {
+            color: inherit;
+            text-decoration: none;
+            font-size: 10px;
+        }
+
+        #controls a:hover {
+            text-decoration: underline;
+        }
+
         #stats {
             font-size: 10px;
             color: #888;
@@ -78,7 +88,7 @@
             bottom: 80px;
         }
 
-        #timeline {
+        #timeline-container {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -89,10 +99,12 @@
             border-right: 1px solid #333;
         }
 
-        #timeline-canvas {
+        #timeline-container svg {
             display: block;
             width: 100%;
             height: 100%;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
         }
 
         #sidebar {
@@ -108,17 +120,9 @@
             padding: 12px;
         }
 
-        #sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #sidebar::-webkit-scrollbar-track {
-            background: #000;
-        }
-
-        #sidebar::-webkit-scrollbar-thumb {
-            background: #333;
-        }
+        #sidebar::-webkit-scrollbar { width: 6px; }
+        #sidebar::-webkit-scrollbar-track { background: #000; }
+        #sidebar::-webkit-scrollbar-thumb { background: #333; }
 
         .item {
             border-bottom: 1px solid #1a1a1a;
@@ -127,30 +131,17 @@
             transition: background 0.1s;
         }
 
-        .item:hover {
-            background: #0a0a0a;
-        }
-
-        .item.selected {
-            background: #1a1a1a;
-        }
+        .item:hover { background: #0a0a0a; }
+        .item.selected { background: #1a1a1a; }
 
         .item.highlighted {
             background: #fff !important;
             color: #000 !important;
         }
 
-        .item.highlighted .item-title {
-            color: #000 !important;
-        }
-
-        .item.highlighted .item-meta {
-            color: #333 !important;
-        }
-
-        .item.highlighted .item-link {
-            color: #0066cc !important;
-        }
+        .item.highlighted .item-title { color: #000 !important; }
+        .item.highlighted .item-meta { color: #333 !important; }
+        .item.highlighted .item-link { color: #0066cc !important; }
 
         .item-title {
             font-weight: bold;
@@ -181,15 +172,7 @@
             word-break: break-all;
         }
 
-        .item-link:hover {
-            text-decoration: underline;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
+        .item-link:hover { text-decoration: underline; }
 
         #loading {
             position: fixed;
@@ -267,17 +250,9 @@
             overflow-x: hidden;
         }
 
-        #summary-table .table-content::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        #summary-table .table-content::-webkit-scrollbar-track {
-            background: #000;
-        }
-
-        #summary-table .table-content::-webkit-scrollbar-thumb {
-            background: #333;
-        }
+        #summary-table .table-content::-webkit-scrollbar { width: 4px; }
+        #summary-table .table-content::-webkit-scrollbar-track { background: #000; }
+        #summary-table .table-content::-webkit-scrollbar-thumb { background: #333; }
 
         #summary-table .table-title {
             font-weight: bold;
@@ -292,9 +267,7 @@
             text-decoration: underline;
         }
 
-        #summary-table .table-toggle:hover {
-            color: #74b9ff;
-        }
+        #summary-table .table-toggle:hover { color: #74b9ff; }
 
         #summary-table table {
             width: 100%;
@@ -311,13 +284,8 @@
             transition: background 0.1s;
         }
 
-        #summary-table tr:hover {
-            background: #1a1a1a;
-        }
-
-        #summary-table tr.selected {
-            background: #1a1a1a;
-        }
+        #summary-table tr:hover { background: #1a1a1a; }
+        #summary-table tr.selected { background: #1a1a1a; }
 
         #summary-table td:first-child {
             color: #fff;
@@ -338,30 +306,25 @@
             vertical-align: middle;
         }
     </style>
-    <script src="../shared/colors.js"></script>
-    <script src="../shared/filters.js"></script>
 </head>
 <body>
     <div id="header">
-        <div id="title">⌂ / <a href="../home/index.html">RU_AFR_EXPERIMENT</a> / 3D SEMANTIC SPACE</div>
+        <div id="title"><a href="/home/home.html">⌂</a> / <a id="dataset-link" href="#">DATASET</a> / 3D SEMANTIC SPACE</div>
         <div id="controls">
             <label>
                 <input type="checkbox" id="toggle-outliers" checked>
                 OUTLIERS
             </label>
+            <a id="sibling-link" href="#">DASHBOARD</a>
             <div id="stats"></div>
         </div>
     </div>
 
-    <div id="canvas-container">
-        <canvas id="canvas"></canvas>
-    </div>
+    <div id="canvas-container"></div>
 
     <div id="sidebar"></div>
 
-    <div id="timeline">
-        <canvas id="timeline-canvas"></canvas>
-    </div>
+    <div id="timeline-container"></div>
 
     <div id="summary-table">
         <div class="table-header">
@@ -377,7 +340,6 @@
 
     <div id="tooltip"></div>
 
-    <script src="viewer.js"></script>
-
+    <script type="module" src="main.js"></script>
 </body>
 </html>
