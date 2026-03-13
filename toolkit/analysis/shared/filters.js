@@ -1,11 +1,11 @@
 // Cross-filter sync via localStorage for semantic-toolkit analysis views.
 //
-// Dashboard broadcasts filters; viewer polls and applies them.
+// Dashboard broadcasts filters; embedding-viewer polls and applies them.
 //
 // Usage (dashboard):
 //   emitFilters({ selectedWeek, selectedLocation, selectedCluster });
 //
-// Usage (viewer):
+// Usage (embedding-viewer):
 //   startFilterSync(({ selectedWeek, selectedLocation, selectedCluster }) => {
 //       // apply incoming filters
 //   });

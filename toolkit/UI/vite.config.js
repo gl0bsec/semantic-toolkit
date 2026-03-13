@@ -11,7 +11,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        viewer: resolve(DATA_VIEWS, 'viewer/viewer.html'),
+        'embedding-viewer': resolve(DATA_VIEWS, 'embedding-viewer/embedding-viewer.html'),
         dashboard: resolve(DATA_VIEWS, 'dashboard/dashboard.html'),
       },
     },
