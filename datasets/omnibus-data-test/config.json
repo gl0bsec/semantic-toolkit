@@ -1,0 +1,15 @@
+{
+  "name": "omnibus-data-test",
+  "dataSource": "Omnibus_Merged_Doc_Vectors_with_Metadata_3d.csv",
+  "columns": {
+    "x": "map_vector_0",
+    "y": "map_vector_1",
+    "z": "map_vector_2",
+    "title": ["original_filename", "text_name"],
+    "date": "date",
+    "cluster": "cluster",
+    "type": "user_type"
+  },
+  "pointSize": { "min": 1, "max": 4, "scale": 0.25 },
+  "timeline": { "startDate": "2025-09-01" }
+}
