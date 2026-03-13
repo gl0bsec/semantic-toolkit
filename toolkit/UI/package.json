@@ -8,13 +8,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "three": "^0.172.0",
     "d3-array": "^3.2.4",
     "d3-axis": "^3.0.0",
     "d3-scale": "^4.0.2",
     "d3-selection": "^3.0.0",
     "d3-shape": "^3.2.0",
-    "d3-time-format": "^4.1.0"
+    "d3-time-format": "^4.1.0",
+    "three": "^0.172.0"
   },
   "devDependencies": {
     "vite": "^6.0.0"

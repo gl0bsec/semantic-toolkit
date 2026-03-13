@@ -99,7 +99,9 @@ def _scan(csv_path: Path, columns: dict) -> list[Record]:
         dt_expr = (
             f"COALESCE("
             f"  TRY_STRPTIME({dc}, '%m/%d/%Y'),"
-            f"  TRY_STRPTIME({dc}, '%Y-%m-%d')"
+            f"  TRY_STRPTIME({dc}, '%Y-%m-%d'),"
+            f"  TRY_STRPTIME({dc}, '%Y/%m/%d %H:%M:%S'),"
+            f"  TRY_STRPTIME({dc}, '%Y/%m/%d')"
             f")::DATE"
         )
     else:
