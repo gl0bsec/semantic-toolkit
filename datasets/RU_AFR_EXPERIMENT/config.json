@@ -1,5 +1,6 @@
 {
   "name": "RU_AFR_EXPERIMENT",
+  "views": ["embedding-viewer", "dashboard"],
   "dataSource": "RU_AFR_EXPERIMENT._3d.csv",
   "lookupSource": "LOOKUP-COUNTRIES.TXT",
   "columns": {

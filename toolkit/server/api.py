@@ -33,6 +33,26 @@ def _get_dataset_dir(query: dict, datasets_dir: Path) -> Path | None:
     return d if d.exists() else None
 
 
+def _list_datasets(datasets_dir: Path) -> list[dict]:
+    """Return metadata for all datasets that have a valid config.json."""
+    results = []
+    for d in sorted(datasets_dir.iterdir()):
+        if not d.is_dir():
+            continue
+        config_path = d / "config.json"
+        if not config_path.exists():
+            continue
+        try:
+            config = load_config(d)
+            results.append({
+                "name": config.get("name", d.name),
+                "views": config.get("views", []),
+            })
+        except Exception:
+            continue
+    return results
+
+
 def handle_api(path: str, datasets_dir: Path) -> tuple[int, str, bytes]:
     """
     Handle an /api/* request.
@@ -41,6 +61,10 @@ def handle_api(path: str, datasets_dir: Path) -> tuple[int, str, bytes]:
     parsed = urlparse(path)
     route = parsed.path
     query = parse_qs(parsed.query)
+
+    if route == "/api/datasets":
+        payload = _list_datasets(datasets_dir)
+        return 200, "application/json", json.dumps(payload).encode()
 
     dataset_dir = _get_dataset_dir(query, datasets_dir)
     if dataset_dir is None:

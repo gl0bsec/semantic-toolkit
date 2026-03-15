@@ -22,8 +22,8 @@ export default defineConfig({
       '/api': 'http://localhost:8080',
       '/datasets': 'http://localhost:8080',
       '/home': 'http://localhost:8080',
-      // Proxy dataset index/analysis pages to the Python server
-      '^/[A-Z][A-Z0-9_]+/': {
+      // Match any dataset path: /{name}/... but not Vite paths (/ui, /@, /node_modules, /__vite)
+      '^/(?!ui/|@|node_modules/|__vite)[a-zA-Z][a-zA-Z0-9_-]+/': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },

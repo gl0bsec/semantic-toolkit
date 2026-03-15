@@ -1,5 +1,6 @@
 {
   "name": "omnibus-data-test",
+  "views": ["embedding-viewer"],
   "dataSource": "Omnibus_Merged_Doc_Vectors_with_Metadata_3d.csv",
   "columns": {
     "x": "map_vector_0",

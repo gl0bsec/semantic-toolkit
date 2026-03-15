@@ -129,30 +129,28 @@
                     <tr>
                         <th style="width: 220px">Dataset</th>
                         <th style="width: 80px">Type</th>
-                        <th style="width: 140px">Created</th>
-                        <th style="width: 140px">Modified</th>
                         <th style="width: 80px">Views</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr onclick="location.href='../RU_AFR_EXPERIMENT/index.html'">
-                        <td>
-                            <a class="dataset-name" href="../RU_AFR_EXPERIMENT/index.html">RU_AFR_EXPERIMENT</a>
-                        </td>
-                        <td class="col-modified">csv</td>
-                        <td class="col-modified">26-02-03</td>
-                        <td class="col-modified">26-03-05</td>
-                        <td class="col-modified">2</td>
-                    </tr>
-                    <tr class="new-pipe">
-                        <td>+ create new project</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </tbody>
+                <tbody id="dataset-list"></tbody>
             </table>
         </div>
+        <script>
+            fetch('/api/datasets')
+                .then(r => r.json())
+                .then(datasets => {
+                    const tbody = document.getElementById('dataset-list');
+                    datasets.forEach(ds => {
+                        const url = '/' + ds.name + '/index.html';
+                        const tr = document.createElement('tr');
+                        tr.onclick = () => location.href = url;
+                        tr.innerHTML =
+                            '<td><a class="dataset-name" href="' + url + '">' + ds.name + '</a></td>' +
+                            '<td class="col-modified">csv</td>' +
+                            '<td class="col-modified">' + ds.views.length + '</td>';
+                        tbody.appendChild(tr);
+                    });
+                });
+        </script>
     </body>
 </html>

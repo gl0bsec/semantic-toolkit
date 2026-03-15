@@ -32,6 +32,9 @@ from toolkit.server.api import handle_api  # noqa: E402
 DEFAULT_PORT = 8000
 
 
+DATASET_INDEX_TEMPLATE = (TOOLKIT_DIR / "analysis" / "data-views" / "dataset-index.html")
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     datasets_dir: Path  # set on the class before serving
 
@@ -44,6 +47,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
+
+        # Serve generic dataset index for /{dataset}/index.html if no
+        # per-dataset override exists in the analysis directory.
+        clean = self.path.split("?", 1)[0]
+        parts = clean.strip("/").split("/")
+        if (
+            len(parts) == 2
+            and parts[1] == "index.html"
+            and (self.__class__.datasets_dir / parts[0] / "config.json").exists()
+            and not (ANALYSIS_DIR / parts[0] / "index.html").exists()
+            and DATASET_INDEX_TEMPLATE.exists()
+        ):
+            body = DATASET_INDEX_TEMPLATE.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         super().do_GET()
 
     def end_headers(self):

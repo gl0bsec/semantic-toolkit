@@ -28,10 +28,20 @@ async function init() {
         // Set header links
         document.getElementById('dataset-link').textContent = dataset;
         document.getElementById('dataset-link').href = `/${dataset}/index.html`;
-        document.getElementById('sibling-link').href = `/ui/data-views/dashboard/dashboard.html?dataset=${dataset}`;
 
         // Load config
         config = await fetchConfig(dataset);
+
+        // Set dashboard link based on configured views
+        const siblingLink = document.getElementById('sibling-link');
+        if (config.views && config.views.includes('dashboard')) {
+            siblingLink.href = `/ui/data-views/dashboard/dashboard.html?dataset=${dataset}`;
+        } else {
+            siblingLink.textContent = 'DASHBOARD UNAVAILABLE';
+            siblingLink.style.color = '#555';
+            siblingLink.style.cursor = 'default';
+            siblingLink.removeAttribute('href');
+        }
 
         // Load data via API into DuckDB
         const records = await loadDataset(dataset);
