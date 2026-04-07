@@ -21,7 +21,7 @@ let showCooccurrence = true;
 let weightThreshold = 1;
 let curvedEdges = false;
 let filterTypes = new Set();
-let filterCommunity = null;
+let filterCommunities = new Set();
 
 // --- Entity type colors ---
 const TYPE_COLORS = {
@@ -108,11 +108,46 @@ function buildGraph() {
 
     renderer = new Sigma(graph, container, {
         renderLabels: true,
-        labelRenderedSizeThreshold: 8,
+        labelRenderedSizeThreshold: 6,
         labelSize: 11,
         labelFont: 'Courier New',
-        labelColor: { color: '#ccc' },
-        defaultEdgeColor: '#222',
+        labelColor: { color: '#ddd' },
+        defaultDrawNodeLabel(context, data, settings) {
+            if (!data.label) return;
+            const size = settings.labelSize;
+            context.font = `${settings.labelWeight} ${size}px ${settings.labelFont}`;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            const textWidth = context.measureText(data.label).width;
+            context.fillStyle = 'rgba(0,0,0,0.7)';
+            context.fillRect(data.x - textWidth / 2 - 2, data.y - size / 2 - 1, textWidth + 4, size + 2);
+            context.fillStyle = '#ddd';
+            context.fillText(data.label, data.x, data.y);
+            context.textAlign = 'start';
+            context.textBaseline = 'alphabetic';
+        },
+        defaultDrawNodeHover(context, data, settings) {
+            if (!data.label) return;
+            // Clear regular label
+            const regSize = settings.labelSize;
+            context.font = `${settings.labelWeight} ${regSize}px ${settings.labelFont}`;
+            const regWidth = context.measureText(data.label).width;
+            context.clearRect(data.x - regWidth / 2 - 3, data.y - regSize / 2 - 2, regWidth + 6, regSize + 4);
+
+            // Draw hover label
+            const size = settings.labelSize + 1;
+            context.font = `bold ${size}px ${settings.labelFont}`;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            const textWidth = context.measureText(data.label).width;
+            context.fillStyle = 'rgba(0,0,0,0.85)';
+            context.fillRect(data.x - textWidth / 2 - 3, data.y - size / 2 - 2, textWidth + 6, size + 4);
+            context.fillStyle = '#fff';
+            context.fillText(data.label, data.x, data.y);
+            context.textAlign = 'start';
+            context.textBaseline = 'alphabetic';
+        },
+        defaultEdgeColor: '#1a1a1a',
         defaultEdgeType: curvedEdges ? 'curved' : 'line',
         edgeProgramClasses: {
             curved: EdgeCurveProgram,
@@ -121,39 +156,50 @@ function buildGraph() {
         stagePadding: 40,
         nodeReducer(node, data) {
             const res = { ...data };
-            if (hoveredNode && hoveredNode !== node && !graph.hasEdge(hoveredNode, node) && !graph.hasEdge(node, hoveredNode)) {
+            if (selectedNode) {
+                if (selectedNode === node) {
+                    res.highlighted = true;
+                } else if (!graph.hasEdge(selectedNode, node) && !graph.hasEdge(node, selectedNode)) {
+                    res.color = '#1a1a1a';
+                    res.label = '';
+                }
+            } else if (hoveredNode && hoveredNode !== node && !graph.hasEdge(hoveredNode, node) && !graph.hasEdge(node, hoveredNode)) {
                 res.color = '#1a1a1a';
                 res.label = '';
             }
-            if (selectedNode === node) {
-                res.highlighted = true;
-            }
-            if (filterTypes.size > 0 && !filterTypes.has(data.entityType)) {
-                res.hidden = true;
-            }
-            if (filterCommunity !== null && data.modularity_class !== filterCommunity) {
-                res.hidden = true;
+            const dimmed = (filterTypes.size > 0 && !filterTypes.has(data.entityType))
+                || (filterCommunities.size > 0 && !filterCommunities.has(data.modularity_class));
+            if (dimmed) {
+                res.color = '#1a1a1a';
+                res.label = '';
+                res.zIndex = 0;
             }
             return res;
         },
         edgeReducer(edge, data) {
             const res = { ...data };
-            if (hoveredNode) {
-                const src = graph.source(edge);
-                const tgt = graph.target(edge);
+            const src = graph.source(edge);
+            const tgt = graph.target(edge);
+            const srcData = graph.getNodeAttributes(src);
+            const tgtData = graph.getNodeAttributes(tgt);
+            const srcDimmed = (filterTypes.size > 0 && !filterTypes.has(srcData.entityType))
+                || (filterCommunities.size > 0 && !filterCommunities.has(srcData.modularity_class));
+            const tgtDimmed = (filterTypes.size > 0 && !filterTypes.has(tgtData.entityType))
+                || (filterCommunities.size > 0 && !filterCommunities.has(tgtData.modularity_class));
+            if (srcDimmed || tgtDimmed) {
+                res.color = 'rgba(26,26,26,0.5)';
+            }
+            if (selectedNode) {
+                if (src !== selectedNode && tgt !== selectedNode) {
+                    res.color = 'rgba(26,26,26,0.5)';
+                } else {
+                    res.color = 'rgba(218,195,120,0.4)';
+                }
+            } else if (hoveredNode) {
                 if (src !== hoveredNode && tgt !== hoveredNode) {
                     res.hidden = true;
                 } else {
-                    res.color = '#666';
-                }
-            }
-            if (selectedNode) {
-                const src = graph.source(edge);
-                const tgt = graph.target(edge);
-                if (src !== selectedNode && tgt !== selectedNode) {
-                    res.color = '#111';
-                } else {
-                    res.color = '#888';
+                    res.color = 'rgba(218,195,120,0.35)';
                 }
             }
             return res;
@@ -186,6 +232,15 @@ function buildGraph() {
     container2.addEventListener('mousemove', (e) => {
         if (hoveredNode) positionTooltip(e.clientX, e.clientY);
     });
+
+    // Clear hover state when mouse enters the sidebar (safety net for missed leaveNode)
+    document.getElementById('sidebar').addEventListener('mouseenter', () => {
+        if (hoveredNode) {
+            hoveredNode = null;
+            hideTooltip();
+            renderer.refresh();
+        }
+    });
 }
 
 function addFilteredEdges() {
@@ -202,8 +257,8 @@ function addFilteredEdges() {
         graph.addEdgeWithKey(`e${edgeId++}`, e.source, e.target, {
             weight: e.weight,
             semantic: e.semantic,
-            color: e.semantic ? 'rgba(74,144,226,0.15)' : 'rgba(255,255,255,0.06)',
-            size: Math.min(e.weight * 0.4, 3),
+            color: e.semantic ? 'rgba(150,150,150,0.08)' : 'rgba(150,150,150,0.035)',
+            size: Math.min(e.weight * 0.3, 2.5),
             filename: e.filename,
             context: e.context,
         });
@@ -211,12 +266,16 @@ function addFilteredEdges() {
 }
 
 function nodeSizeScale(freq) {
-    return 2 + Math.sqrt(freq) * 0.8;
+    return 2.5 + Math.sqrt(freq) * 1;
 }
 
 // --- Selection ---
 function selectNode(nodeId) {
     selectedNode = nodeId;
+    hoveredNode = null;
+    hideTooltip();
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-results').innerHTML = '';
     renderer.refresh();
     renderNodeDetail();
     renderNeighborList();
@@ -312,13 +371,13 @@ function renderSearch(query) {
 function renderNodeDetail() {
     const panel = document.getElementById('node-detail');
     if (!selectedNode) {
-        panel.className = '';
+        panel.classList.remove('active');
         panel.innerHTML = '';
         return;
     }
 
     const attrs = graph.getNodeAttributes(selectedNode);
-    panel.className = 'active';
+    panel.classList.add('active');
     panel.innerHTML = `
         <div class="detail-label">${esc(attrs.label)}</div>
         <div class="detail-meta">FREQUENCY: ${attrs.frequency}</div>
@@ -338,23 +397,31 @@ function renderNeighborList() {
         return;
     }
 
-    const neighbors = [];
+    const neighborMap = new Map();
     graph.forEachEdge(selectedNode, (edge, edgeAttrs, source, target) => {
         const neighborId = source === selectedNode ? target : source;
-        const neighborAttrs = graph.getNodeAttributes(neighborId);
-        neighbors.push({
-            id: neighborId,
-            label: neighborAttrs.label,
-            type: neighborAttrs.entityType,
-            frequency: neighborAttrs.frequency,
-            weight: edgeAttrs.weight,
-            semantic: edgeAttrs.semantic,
-            context: edgeAttrs.context || '',
-            filename: edgeAttrs.filename || '',
-        });
+        const existing = neighborMap.get(neighborId);
+        if (existing) {
+            existing.weight += edgeAttrs.weight;
+            if (edgeAttrs.semantic) existing.semantic = true;
+            if (edgeAttrs.context && !existing.context) existing.context = edgeAttrs.context;
+            if (edgeAttrs.filename && !existing.filename) existing.filename = edgeAttrs.filename;
+        } else {
+            const neighborAttrs = graph.getNodeAttributes(neighborId);
+            neighborMap.set(neighborId, {
+                id: neighborId,
+                label: neighborAttrs.label,
+                type: neighborAttrs.entityType,
+                frequency: neighborAttrs.frequency,
+                weight: edgeAttrs.weight,
+                semantic: !!edgeAttrs.semantic,
+                context: edgeAttrs.context || '',
+                filename: edgeAttrs.filename || '',
+            });
+        }
     });
 
-    // Sort by weight descending
+    const neighbors = Array.from(neighborMap.values());
     neighbors.sort((a, b) => b.weight - a.weight);
 
     container.innerHTML = `
@@ -411,7 +478,7 @@ function renderSummary() {
                 } else {
                     filterTypes.add(t);
                 }
-                filterCommunity = null;
+                filterCommunities.clear();
                 renderer.refresh();
                 renderSummary();
                 updateStats();
@@ -430,7 +497,7 @@ function renderSummary() {
         body.innerHTML = sorted.map(([cls, count]) => {
             const c = parseInt(cls);
             return `
-                <tr class="${filterCommunity === c ? 'selected' : ''}" data-community="${c}">
+                <tr class="${filterCommunities.has(c) ? 'selected' : ''}" data-community="${c}">
                     <td><span class="color-dot" style="background:${communityColor(c)}"></span>${c}</td>
                     <td>${count}</td>
                 </tr>
@@ -440,7 +507,11 @@ function renderSummary() {
         body.querySelectorAll('tr').forEach(tr => {
             tr.addEventListener('click', () => {
                 const c = parseInt(tr.dataset.community);
-                filterCommunity = filterCommunity === c ? null : c;
+                if (filterCommunities.has(c)) {
+                    filterCommunities.delete(c);
+                } else {
+                    filterCommunities.add(c);
+                }
                 filterTypes.clear();
                 renderer.refresh();
                 renderSummary();
@@ -477,9 +548,10 @@ function hideTooltip() {
 // --- Camera ---
 function focusNode(nodeId) {
     if (!renderer || !graph.hasNode(nodeId)) return;
-    const attrs = graph.getNodeAttributes(nodeId);
+    const displayData = renderer.getNodeDisplayData(nodeId);
+    if (!displayData) return;
     renderer.getCamera().animate(
-        { x: attrs.x, y: attrs.y, ratio: 0.15 },
+        { x: displayData.x, y: displayData.y, ratio: 0.3 },
         { duration: 400 }
     );
 }

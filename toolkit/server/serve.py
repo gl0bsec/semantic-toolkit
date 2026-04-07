@@ -103,15 +103,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return str(ANALYSIS_DIR / rel)
 
 
+def _discover_datasets(datasets_dir: Path) -> list[str]:
+    """Return names of all directories under datasets_dir that have a config.json."""
+    return sorted(
+        d.name for d in datasets_dir.iterdir()
+        if d.is_dir() and (d / "config.json").exists()
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="semantic-toolkit static server")
-    parser.add_argument("--dataset", required=True, help="Dataset name (e.g. RU_AFR_EXPERIMENT)")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     args = parser.parse_args()
 
-    dataset_dir = DATASETS_DIR / args.dataset
-    if not dataset_dir.exists():
-        print(f"Error: dataset directory not found: {dataset_dir}", file=sys.stderr)
+    datasets = _discover_datasets(DATASETS_DIR)
+    if not datasets:
+        print(f"No datasets found in {DATASETS_DIR}", file=sys.stderr)
         sys.exit(1)
 
     Handler.datasets_dir = DATASETS_DIR
@@ -119,7 +126,7 @@ def main():
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", args.port), Handler) as httpd:
         print(f"Serving on http://localhost:{args.port}/")
-        print(f"Dataset:  {dataset_dir}")
+        print(f"Datasets: {', '.join(datasets)}")
         print(f"Analysis: {ANALYSIS_DIR}")
         print("Press Ctrl+C to stop")
         try:
