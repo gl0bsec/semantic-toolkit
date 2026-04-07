@@ -1,0 +1,12 @@
+{
+  "name": "accel-ghosts",
+  "views": ["network-viewer"],
+  "dataSource": {
+    "type": "duckdb",
+    "path": "/Users/geist/Desktop/Project Hub/Analysis hub/Projects/accel-ghosts/data/processed/main.ddb",
+    "tables": {
+      "nodes": "entity_nodes",
+      "edges": "entity_edges"
+    }
+  }
+}

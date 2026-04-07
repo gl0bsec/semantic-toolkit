@@ -22,7 +22,7 @@ SERVER_DIR = Path(__file__).parent
 TOOLKIT_DIR = SERVER_DIR.parent
 sys.path.insert(0, str(TOOLKIT_DIR.parent))
 
-from toolkit.ingest import load_config, load_lookup, load_records
+from toolkit.ingest import load_config, load_lookup, load_records, load_network
 
 
 def _get_dataset_dir(query: dict, datasets_dir: Path) -> Path | None:
@@ -86,15 +86,40 @@ def handle_api(path: str, datasets_dir: Path) -> tuple[int, str, bytes]:
         return 200, "application/json", json.dumps(lookup).encode()
 
     if route == "/api/data":
-        csv_path = dataset_dir / config["dataSource"]
-        if not csv_path.exists():
-            return 404, "application/json", json.dumps({"error": "data file not found"}).encode()
+        ds = config["dataSource"]
+
+        if isinstance(ds, str):
+            # CSV file source
+            csv_path = dataset_dir / ds
+            if not csv_path.exists():
+                return 404, "application/json", json.dumps({"error": "data file not found"}).encode()
+            source = csv_path
+        else:
+            # DuckDB database source
+            db_path = Path(ds["path"])
+            if not db_path.is_absolute():
+                db_path = dataset_dir / db_path
+            if not db_path.exists():
+                return 404, "application/json", json.dumps({"error": "database file not found"}).encode()
+            source = {"path": str(db_path), "table": ds["table"]}
 
         start_date_str = config.get("timeline", {}).get("startDate")
         start_date = date.fromisoformat(start_date_str) if start_date_str else None
 
-        records = load_records(csv_path, config["columns"], start_date=start_date)
+        records = load_records(source, config["columns"], start_date=start_date)
         payload = [r.to_dict() for r in records]
         return 200, "application/json", json.dumps(payload).encode()
+
+    if route == "/api/network":
+        ds = config["dataSource"]
+        if not isinstance(ds, dict) or "tables" not in ds:
+            return 400, "application/json", json.dumps({"error": "network endpoint requires dataSource with 'tables'"}).encode()
+        db_path = Path(ds["path"])
+        if not db_path.is_absolute():
+            db_path = dataset_dir / db_path
+        if not db_path.exists():
+            return 404, "application/json", json.dumps({"error": "database file not found"}).encode()
+        network = load_network(str(db_path), ds["tables"])
+        return 200, "application/json", json.dumps(network).encode()
 
     return 404, "application/json", json.dumps({"error": f"unknown route: {route}"}).encode()

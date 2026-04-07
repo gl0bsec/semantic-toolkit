@@ -47,7 +47,7 @@ async function init() {
         const records = await loadDataset(dataset);
 
         // Process records with JS date filtering
-        const startDate = new Date(config.timeline?.startDate || '2025-06-01');
+        const startDate = new Date(config.timeline?.startDate || config.startDate || '2025-06-01');
         for (const r of records) {
             const dateStr = r.date || '';
             const parsedDate = parseDate(dateStr);
@@ -130,7 +130,7 @@ function parseDate(dateStr) {
 function getWeekKey(dateStr) {
     if (!dateStr) return null;
     const date = parseDate(dateStr);
-    const startDate = new Date(config.timeline?.startDate || '2025-06-01');
+    const startDate = new Date(config.timeline?.startDate || config.startDate || '2025-06-01');
     if (date < startDate) return null;
 
     const weekNum = Math.floor((date - startDate) / (7 * 24 * 60 * 60 * 1000));

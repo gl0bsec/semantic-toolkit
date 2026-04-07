@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: #000;
+            border-bottom: 1px solid #333;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            font-size: 11px;
+        }
+
+        #title { font-weight: bold; letter-spacing: 0.5px; }
+        #title a { color: inherit; text-decoration: none; }
+        #title a:hover { text-decoration: underline; }
+
+        #controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        #controls label {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+        }
+
+        #controls input[type="checkbox"] { cursor: pointer; }
+        #controls select {
+            background: #111;
+            color: #fff;
+            border: 1px solid #333;
+            font-family: inherit;
+            font-size: 10px;
+            padding: 2px 4px;
+            cursor: pointer;
+        }
+
+        #stats { font-size: 10px; color: #888; }
+
+        #graph-container {
+            position: fixed;
+            top: 33px;
+            left: 0;
+            right: 300px;
+            bottom: 0;
+        }
+
+        #sidebar {
+            position: fixed;
+            top: 33px;
+            right: 0;
+            width: 300px;
+            bottom: 0;
+            background: #000;
+            border-left: 1px solid #333;
+            overflow-y: auto;
+            font-size: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #sidebar::-webkit-scrollbar { width: 6px; }
+        #sidebar::-webkit-scrollbar-track { background: #000; }
+        #sidebar::-webkit-scrollbar-thumb { background: #333; }
+
+        #node-detail {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            display: none;
+        }
+
+        #node-detail.active { display: block; }
+
+        #node-detail .detail-label {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        #node-detail .detail-meta {
+            color: #888;
+            font-size: 9px;
+            margin-bottom: 4px;
+        }
+
+        #node-detail .detail-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-top: 4px;
+            margin-right: 4px;
+        }
+
+        #neighbor-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px 12px;
+        }
+
+        #neighbor-list::-webkit-scrollbar { width: 6px; }
+        #neighbor-list::-webkit-scrollbar-track { background: #000; }
+        #neighbor-list::-webkit-scrollbar-thumb { background: #333; }
+
+        .neighbor-header {
+            font-weight: bold;
+            font-size: 10px;
+            padding: 8px 0 4px;
+            border-bottom: 1px solid #222;
+            margin-bottom: 4px;
+            color: #888;
+            position: sticky;
+            top: 0;
+            background: #000;
+        }
+
+        .neighbor-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #111;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .neighbor-item:hover { background: #0a0a0a; }
+
+        .neighbor-item .ni-label {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .neighbor-item .ni-meta {
+            color: #666;
+            font-size: 9px;
+        }
+
+        .neighbor-item .ni-context {
+            color: #555;
+            font-size: 9px;
+            margin-top: 4px;
+            line-height: 1.3;
+            max-height: 40px;
+            overflow: hidden;
+        }
+
+        #summary-panel {
+            position: fixed;
+            bottom: 0;
+            right: 300px;
+            background: rgba(0, 0, 0, 0.95);
+            border-top: 1px solid #333;
+            border-left: 1px solid #333;
+            padding: 12px;
+            font-size: 9px;
+            z-index: 50;
+            min-width: 200px;
+            max-height: 300px;
+        }
+
+        #summary-panel .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #333;
+        }
+
+        #summary-panel .table-title {
+            font-weight: bold;
+            color: #fff;
+            font-size: 10px;
+        }
+
+        #summary-panel .table-toggle {
+            color: #4a90e2;
+            cursor: pointer;
+            font-size: 8px;
+            text-decoration: underline;
+        }
+
+        #summary-panel .table-toggle:hover { color: #74b9ff; }
+
+        #summary-panel .table-content {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        #summary-panel .table-content::-webkit-scrollbar { width: 4px; }
+        #summary-panel .table-content::-webkit-scrollbar-track { background: #000; }
+        #summary-panel .table-content::-webkit-scrollbar-thumb { background: #333; }
+
+        #summary-panel table { width: 100%; border-collapse: collapse; }
+        #summary-panel td { padding: 4px 0; color: #aaa; }
+        #summary-panel tr { cursor: pointer; transition: background 0.1s; }
+        #summary-panel tr:hover { background: #1a1a1a; }
+        #summary-panel tr.selected { background: #1a1a1a; }
+        #summary-panel td:first-child { color: #fff; padding-right: 12px; }
+        #summary-panel td:last-child { text-align: right; font-weight: bold; color: #4a90e2; }
+
+        #summary-panel .color-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        #search-container {
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        #search-input {
+            width: 100%;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            font-family: inherit;
+            font-size: 10px;
+            padding: 4px 8px;
+            outline: none;
+        }
+
+        #search-input:focus { border-color: #4a90e2; }
+
+        #search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0 12px;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            color: #666;
+            z-index: 200;
+        }
+
+        #tooltip {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            font-size: 10px;
+            line-height: 1.4;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        #tooltip .tooltip-title { font-weight: bold; margin-bottom: 4px; color: #000; }
+        #tooltip .tooltip-meta { color: #666; font-size: 9px; }
+        #tooltip .tooltip-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .weight-slider {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .weight-slider input[type="range"] {
+            width: 80px;
+            cursor: pointer;
+            accent-color: #4a90e2;
+        }
+
+        .weight-slider .weight-val {
+            font-size: 10px;
+            color: #4a90e2;
+            min-width: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div id="title">
+            <a href="/home/home.html">&#8962;</a> /
+            <a id="dataset-link" href="#">DATASET</a> /
+            ENTITY NETWORK
+        </div>
+        <div id="controls">
+            <label>
+                <input type="checkbox" id="toggle-semantic" checked>
+                SEMANTIC
+            </label>
+            <label>
+                <input type="checkbox" id="toggle-cooccurrence" checked>
+                CO-OCCUR
+            </label>
+            <label>
+                <input type="checkbox" id="toggle-curved">
+                CURVED
+            </label>
+            <div class="weight-slider">
+                <span style="font-size:10px;color:#888;">WT</span>
+                <input type="range" id="weight-threshold" min="1" max="10" value="1">
+                <span class="weight-val" id="weight-val">1</span>
+            </div>
+            <div id="stats"></div>
+        </div>
+    </div>
+
+    <div id="graph-container"></div>
+
+    <div id="sidebar">
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="SEARCH ENTITIES...">
+        </div>
+        <div id="search-results"></div>
+        <div id="node-detail"></div>
+        <div id="neighbor-list"></div>
+    </div>
+
+    <div id="summary-panel">
+        <div class="table-header">
+            <div class="table-title" id="summary-title">ENTITY TYPE</div>
+            <div class="table-toggle" id="summary-toggle">COMMUNITY</div>
+        </div>
+        <div class="table-content">
+            <table><tbody id="summary-body"></tbody></table>
+        </div>
+    </div>
+
+    <div id="loading">LOADING NETWORK...</div>
+
+    <div id="tooltip"></div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

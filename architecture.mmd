@@ -1,0 +1,86 @@
+graph TB
+    subgraph "Data Layer"
+        CSV["CSV Data File"]
+        CFG["config.json"]
+        LKP["LOOKUP-COUNTRIES.TXT"]
+    end
+
+    subgraph "Ingest"
+        DDB["duckdb_loader.py<br/><i>DuckDB scan, type casting,<br/>date normalization, mtime cache</i>"]
+        LC["load_config.py<br/><i>deep-merge defaults + config</i>"]
+        LL["load_lookup.py<br/><i>code → country name</i>"]
+        SCH["schema.py<br/><i>Record dataclass</i>"]
+    end
+
+    subgraph "Server (serve.py)"
+        API["api.py"]
+        STATIC["Static File Router"]
+
+        API -->|"/api/config"| LC
+        API -->|"/api/data"| DDB
+        API -->|"/api/lookup"| LL
+        API -->|"/api/datasets"| CFG
+    end
+
+    subgraph "Frontend Shared Libs"
+        CFGJS["config.js<br/><i>getDataset(), fetchConfig(),<br/>fetchLookup()</i>"]
+        DBJS["db.js<br/><i>loadDataset()</i>"]
+        FILT["filters.js<br/><i>emitFilters(), startFilterSync()</i>"]
+        COLORS["colors.js<br/><i>cluster palette</i>"]
+    end
+
+    subgraph "Views"
+        HOME["home.html<br/><i>Dataset Browser</i>"]
+        IDX["index.html<br/><i>Per-Dataset View List</i>"]
+        DASH["Dashboard<br/><i>D3 timeline, cluster table,<br/>location table, data feed</i>"]
+        VIEW["Embedding Viewer<br/><i>Three.js pointcloud, D3 timeline,<br/>summary table, sidebar</i>"]
+    end
+
+    subgraph "Build"
+        VITE["Vite 6<br/><i>analysis/data-views/ → UI/dist/</i>"]
+    end
+
+    %% Data flow
+    CSV --> DDB
+    CFG --> LC
+    LKP --> LL
+    DDB --> SCH
+
+    %% Server routing
+    STATIC -->|"/home/*"| HOME
+    STATIC -->|"/datasets/*"| CSV
+    STATIC -->|"/ui/*"| VITE
+    STATIC -->|"/*"| IDX
+
+    %% Frontend data fetching
+    CFGJS -->|"HTTP GET"| API
+    DBJS -->|"HTTP GET"| API
+
+    %% View dependencies
+    HOME -->|"lists datasets"| IDX
+    IDX --> DASH
+    IDX --> VIEW
+    DASH --> CFGJS
+    DASH --> DBJS
+    DASH --> COLORS
+    VIEW --> CFGJS
+    VIEW --> DBJS
+    VIEW --> COLORS
+
+    %% Cross-tab sync
+    DASH -- "emitFilters()<br/>(localStorage)" --> FILT
+    FILT -- "startFilterSync()<br/>(StorageEvent)" --> VIEW
+
+    %% Build pipeline
+    DASH -.->|"source"| VITE
+    VIEW -.->|"source"| VITE
+
+    style CSV fill:#f5f5dc,stroke:#333
+    style CFG fill:#f5f5dc,stroke:#333
+    style LKP fill:#f5f5dc,stroke:#333
+    style API fill:#e6f3ff,stroke:#336
+    style STATIC fill:#e6f3ff,stroke:#336
+    style DASH fill:#ffe6cc,stroke:#633
+    style VIEW fill:#d4edda,stroke:#363
+    style HOME fill:#f0e6ff,stroke:#636
+    style VITE fill:#fff0f0,stroke:#633

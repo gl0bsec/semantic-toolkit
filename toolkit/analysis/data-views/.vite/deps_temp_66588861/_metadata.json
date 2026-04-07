@@ -1,73 +1,67 @@
 {
-  "hash": "784f1426",
+  "hash": "6a86bb1c",
   "configHash": "10b04aa7",
-  "lockfileHash": "e66ae0b5",
-  "browserHash": "fdfabb88",
+  "lockfileHash": "1bcf5502",
+  "browserHash": "684a1872",
   "optimized": {
     "d3-array": {
       "src": "../../../../UI/node_modules/d3-array/src/index.js",
       "file": "d3-array.js",
-      "fileHash": "d755e406",
+      "fileHash": "d23e2951",
       "needsInterop": false
     },
     "d3-scale": {
       "src": "../../../../UI/node_modules/d3-scale/src/index.js",
       "file": "d3-scale.js",
-      "fileHash": "4d2d4be7",
+      "fileHash": "32594612",
       "needsInterop": false
     },
     "d3-selection": {
       "src": "../../../../UI/node_modules/d3-selection/src/index.js",
       "file": "d3-selection.js",
-      "fileHash": "4b6f0201",
+      "fileHash": "8b4a6dbb",
       "needsInterop": false
     },
     "d3-shape": {
       "src": "../../../../UI/node_modules/d3-shape/src/index.js",
       "file": "d3-shape.js",
-      "fileHash": "c4debaf6",
+      "fileHash": "dad53753",
       "needsInterop": false
     },
     "graphology": {
       "src": "../../../../UI/node_modules/graphology/dist/graphology.mjs",
       "file": "graphology.js",
-      "fileHash": "c1ee041d",
+      "fileHash": "ddb1a8f6",
       "needsInterop": false
     },
     "graphology-layout": {
       "src": "../../../../UI/node_modules/graphology-layout/index.js",
       "file": "graphology-layout.js",
-      "fileHash": "63692342",
+      "fileHash": "008c1664",
       "needsInterop": true
     },
     "graphology-layout-forceatlas2": {
       "src": "../../../../UI/node_modules/graphology-layout-forceatlas2/index.js",
       "file": "graphology-layout-forceatlas2.js",
-      "fileHash": "ab66081c",
+      "fileHash": "7aefc4f3",
       "needsInterop": true
     },
     "sigma": {
       "src": "../../../../UI/node_modules/sigma/dist/sigma.esm.js",
       "file": "sigma.js",
-      "fileHash": "df1e346b",
+      "fileHash": "e72482b3",
       "needsInterop": false
     },
     "three": {
       "src": "../../../../UI/node_modules/three/build/three.module.js",
       "file": "three.js",
-      "fileHash": "9324c770",
+      "fileHash": "5b75da6c",
       "needsInterop": false
     },
     "three/addons/controls/OrbitControls.js": {
       "src": "../../../../UI/node_modules/three/examples/jsm/controls/OrbitControls.js",
       "file": "three_addons_controls_OrbitControls__js.js",
-      "fileHash": "56e787ad",
-      "needsInterop": false
-    },
-    "@sigma/edge-curve": {
-      "src": "../../../../UI/node_modules/@sigma/edge-curve/dist/sigma-edge-curve.esm.js",
-      "file": "@sigma_edge-curve.js",
-      "fileHash": "b850ff5e",
+      "fileHash": "6852784e",
       "needsInterop": false
     }
   },
@@ -78,14 +72,11 @@
     "chunk-KQ7OROF7": {
       "file": "chunk-KQ7OROF7.js"
     },
-    "chunk-3HDVDTKQ": {
-      "file": "chunk-3HDVDTKQ.js"
+    "chunk-VD6JFETH": {
+      "file": "chunk-VD6JFETH.js"
     },
     "chunk-A2ONHANZ": {
       "file": "chunk-A2ONHANZ.js"
-    },
-    "chunk-VD6JFETH": {
-      "file": "chunk-VD6JFETH.js"
     },
     "chunk-5WRI5ZAA": {
       "file": "chunk-5WRI5ZAA.js"

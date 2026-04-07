@@ -47,7 +47,16 @@ def load_config(dataset_dir: Path) -> dict:
             merged.update(raw.get(key, {}))
             config[key] = merged
 
-    if "dataSource" not in config:
+    ds = config.get("dataSource")
+    if ds is None:
         raise ValueError("config.json must specify 'dataSource'")
+    if isinstance(ds, dict):
+        if "type" not in ds or "path" not in ds:
+            raise ValueError("dataSource object must include 'type' and 'path'")
+        if ds["type"] != "duckdb":
+            raise ValueError(f"unsupported dataSource type: {ds['type']}")
+        # Must have either 'table' (single) or 'tables' (dict of named tables)
+        if "table" not in ds and "tables" not in ds:
+            raise ValueError("dataSource must include 'table' or 'tables'")
 
     return config

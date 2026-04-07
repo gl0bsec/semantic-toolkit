@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         'embedding-viewer': resolve(DATA_VIEWS, 'embedding-viewer/embedding-viewer.html'),
         dashboard: resolve(DATA_VIEWS, 'dashboard/dashboard.html'),
+        'network-viewer': resolve(DATA_VIEWS, 'network-viewer/network-viewer.html'),
       },
     },
   },

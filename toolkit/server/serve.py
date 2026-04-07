@@ -116,6 +116,7 @@ def main():
 
     Handler.datasets_dir = DATASETS_DIR
 
+    socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", args.port), Handler) as httpd:
         print(f"Serving on http://localhost:{args.port}/")
         print(f"Dataset:  {dataset_dir}")

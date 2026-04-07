@@ -1,12 +1,13 @@
 """
 DuckDB-backed dataset loader with in-process parse cache.
 
-Replaces parse_csv for API serving. DuckDB scans the CSV in parallel
-and handles date parsing, type casting, and location splitting natively.
+Supports two source types:
+  - CSV files  (Path argument — scanned via read_csv)
+  - DuckDB databases  (dict argument — queried from an existing .duckdb file)
 
-The full parsed record list is cached in memory keyed by (path, mtime).
-The startDate filter is applied against the cache in Python, so date-range
-changes don't trigger a re-scan — only file changes do.
+The full parsed record list is cached in memory keyed by source identity and
+file mtime.  The startDate filter is applied against the cache in Python, so
+date-range changes don't trigger a re-scan — only file changes do.
 """
 
 import os
@@ -17,28 +18,36 @@ import duckdb
 
 from .schema import Record
 
-# {str(csv_path): (mtime_float, list[Record])}
+# {cache_key: (mtime_float, list[Record])}
 _CACHE: dict[str, tuple[float, list[Record]]] = {}
 
 
 def load_records(
-    csv_path: Path,
+    source,
     columns: dict,
     start_date: date | None = None,
 ) -> list[Record]:
     """
-    Return records for csv_path. Scans with DuckDB on first call or when
-    the file has changed; subsequent calls with the same mtime return cached
-    results immediately.
+    Return records from *source*.
 
-    start_date is applied against the cache in Python — not baked into the
-    cache key — so changing the date window never causes a re-scan.
+    source may be:
+      - a Path to a CSV file (existing behaviour), or
+      - a dict with keys ``path`` (str) and ``table`` (str) pointing at
+        a DuckDB database file and the table to read from.
+
+    Results are cached by (source identity, file mtime).  start_date is
+    applied in Python against the cache so changing the date window never
+    triggers a re-scan.
     """
-    key = str(csv_path)
-    mtime = os.path.getmtime(csv_path)
+    if isinstance(source, dict):
+        return _load_from_db(source, columns, start_date)
+
+    # CSV path (original behaviour)
+    key = str(source)
+    mtime = os.path.getmtime(source)
 
     if key not in _CACHE or _CACHE[key][0] != mtime:
-        _CACHE[key] = (mtime, _scan(csv_path, columns))
+        _CACHE[key] = (mtime, _scan_csv(source, columns))
 
     records = _CACHE[key][1]
     if start_date:
@@ -47,7 +56,82 @@ def load_records(
 
 
 # ---------------------------------------------------------------------------
-# Internal helpers
+# DuckDB database source
+# ---------------------------------------------------------------------------
+
+def _load_from_db(
+    source: dict,
+    columns: dict,
+    start_date: date | None = None,
+) -> list[Record]:
+    db_path = source["path"]
+    table = source["table"]
+    key = f"{db_path}::{table}"
+    mtime = os.path.getmtime(db_path)
+
+    if key not in _CACHE or _CACHE[key][0] != mtime:
+        _CACHE[key] = (mtime, _scan_table(db_path, table, columns))
+
+    records = _CACHE[key][1]
+    if start_date:
+        records = [r for r in records if r.date >= start_date]
+    return records
+
+
+def _scan_table(db_path: str, table: str, columns: dict) -> list[Record]:
+    """Open a DuckDB file read-only and scan a table into Records."""
+    con = duckdb.connect(db_path, read_only=True)
+    try:
+        escaped_table = _q(table)
+        headers = [
+            d[0] for d in
+            con.execute(f"SELECT * FROM {escaped_table} LIMIT 0").description
+        ]
+        select_expr = _build_select_exprs(headers, columns)
+        sql = f"""
+            WITH raw AS (
+                SELECT {select_expr}
+                FROM {escaped_table}
+            )
+            SELECT * FROM raw WHERE date IS NOT NULL
+        """
+        rows = con.execute(sql).fetchall()
+    finally:
+        con.close()
+    return _rows_to_records(rows)
+
+
+# ---------------------------------------------------------------------------
+# CSV source
+# ---------------------------------------------------------------------------
+
+def _scan_csv(csv_path: Path, columns: dict) -> list[Record]:
+    """Scan csv_path with DuckDB and return all valid Records (no date filter)."""
+    con = duckdb.connect()
+    escaped = str(csv_path).replace("'", "''")
+
+    headers = [
+        d[0] for d in
+        con.execute(
+            f"SELECT * FROM read_csv('{escaped}', header=true, all_varchar=true) LIMIT 0"
+        ).description
+    ]
+
+    select_expr = _build_select_exprs(headers, columns)
+    sql = f"""
+        WITH raw AS (
+            SELECT {select_expr}
+            FROM read_csv('{escaped}', header=true, all_varchar=true)
+        )
+        SELECT * FROM raw WHERE date IS NOT NULL
+    """
+
+    rows = con.execute(sql).fetchall()
+    return _rows_to_records(rows)
+
+
+# ---------------------------------------------------------------------------
+# Shared helpers
 # ---------------------------------------------------------------------------
 
 def _resolve(headers: list[str], spec) -> str | None:
@@ -63,22 +147,10 @@ def _q(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
 
-def _scan(csv_path: Path, columns: dict) -> list[Record]:
-    """Scan csv_path with DuckDB and return all valid Records (no date filter)."""
-    con = duckdb.connect()
-    escaped = str(csv_path).replace("'", "''")
-
-    # Discover headers without loading data
-    headers = [
-        d[0] for d in
-        con.execute(
-            f"SELECT * FROM read_csv('{escaped}', header=true, all_varchar=true) LIMIT 0"
-        ).description
-    ]
-
+def _build_select_exprs(headers: list[str], columns: dict) -> str:
+    """Build the SELECT column list shared by CSV and DB scan paths."""
     col = {k: _resolve(headers, v) for k, v in columns.items()}
 
-    # Build expressions for each field
     x_expr  = f"TRY_CAST({_q(col['x'])}  AS DOUBLE)"  if col.get("x")       else "0.0"
     y_expr  = f"TRY_CAST({_q(col['y'])}  AS DOUBLE)"  if col.get("y")       else "0.0"
     z_expr  = f"TRY_CAST({_q(col['z'])}  AS DOUBLE)"  if col.get("z")       else "0.0"
@@ -88,28 +160,25 @@ def _scan(csv_path: Path, columns: dict) -> list[Record]:
     ur_expr = _q(col["url"])       if col.get("url")       else "NULL"
 
     if col.get("locations"):
-        # Split on ' | ' (with spaces), matching _parse_pipe_list behaviour
         lc_expr = f"string_split(TRIM({_q(col['locations'])}), ' | ')"
     else:
         lc_expr = "[]"
 
     if col.get("date"):
         dc = _q(col["date"])
-        # Accept both MM/DD/YYYY and ISO YYYY-MM-DD; cast to DATE
         dt_expr = (
             f"COALESCE("
-            f"  TRY_STRPTIME({dc}, '%m/%d/%Y'),"
-            f"  TRY_STRPTIME({dc}, '%Y-%m-%d'),"
-            f"  TRY_STRPTIME({dc}, '%Y/%m/%d %H:%M:%S'),"
-            f"  TRY_STRPTIME({dc}, '%Y/%m/%d')"
+            f"  TRY_STRPTIME(CAST({dc} AS VARCHAR), '%m/%d/%Y'),"
+            f"  TRY_STRPTIME(CAST({dc} AS VARCHAR), '%Y-%m-%d'),"
+            f"  TRY_STRPTIME(CAST({dc} AS VARCHAR), '%Y/%m/%d %H:%M:%S'),"
+            f"  TRY_STRPTIME(CAST({dc} AS VARCHAR), '%Y/%m/%d'),"
+            f"  TRY_CAST({dc} AS DATE)"
             f")::DATE"
         )
     else:
         dt_expr = "NULL"
 
-    sql = f"""
-        WITH raw AS (
-            SELECT
+    return f"""
                 COALESCE({x_expr},  0.0)        AS x,
                 COALESCE({y_expr},  0.0)        AS y,
                 COALESCE({z_expr},  0.0)        AS z,
@@ -118,14 +187,11 @@ def _scan(csv_path: Path, columns: dict) -> list[Record]:
                 COALESCE({ty_expr}, 'Unknown')  AS type,
                 COALESCE({cl_expr}, -1)         AS cluster,
                 COALESCE({ur_expr}, '')         AS url,
-                {lc_expr}                       AS locations
-            FROM read_csv('{escaped}', header=true, all_varchar=true)
-        )
-        SELECT * FROM raw WHERE date IS NOT NULL
-    """
+                {lc_expr}                       AS locations"""
 
-    rows = con.execute(sql).fetchall()
 
+def _rows_to_records(rows) -> list[Record]:
+    """Convert DuckDB result rows into Record instances."""
     records = []
     for x, y, z, title, date_val, type_, cluster, url, locations in rows:
         records.append(Record(
@@ -139,5 +205,48 @@ def _scan(csv_path: Path, columns: dict) -> list[Record]:
             url=url or "",
             locations=[loc.strip() for loc in (locations or []) if loc and loc.strip()],
         ))
-
     return records
+
+
+# ---------------------------------------------------------------------------
+# Network (multi-table) source
+# ---------------------------------------------------------------------------
+
+_NET_CACHE: dict[str, tuple[float, dict]] = {}
+
+
+def load_network(db_path: str, tables: dict) -> dict:
+    """
+    Load network data (nodes + edges) from a DuckDB file.
+
+    tables is a dict like {"nodes": "entity_nodes", "edges": "entity_edges"}.
+    Returns {"nodes": [...], "edges": [...]}.
+    Cached by db file mtime.
+    """
+    key = f"{db_path}::network"
+    mtime = os.path.getmtime(db_path)
+
+    if key not in _NET_CACHE or _NET_CACHE[key][0] != mtime:
+        _NET_CACHE[key] = (mtime, _scan_network(db_path, tables))
+
+    return _NET_CACHE[key][1]
+
+
+def _scan_network(db_path: str, tables: dict) -> dict:
+    con = duckdb.connect(db_path, read_only=True)
+    try:
+        nodes_table = _q(tables["nodes"])
+        edges_table = _q(tables["edges"])
+
+        node_rows = con.execute(f"SELECT * FROM {nodes_table}").fetchall()
+        node_cols = [d[0] for d in con.description]
+
+        edge_rows = con.execute(f"SELECT * FROM {edges_table}").fetchall()
+        edge_cols = [d[0] for d in con.description]
+    finally:
+        con.close()
+
+    nodes = [dict(zip(node_cols, row)) for row in node_rows]
+    edges = [dict(zip(edge_cols, row)) for row in edge_rows]
+
+    return {"nodes": nodes, "edges": edges}
