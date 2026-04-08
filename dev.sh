@@ -14,8 +14,8 @@ BACKEND_PID=$!
 cd toolkit/UI && npm run dev &
 FRONTEND_PID=$!
 
-echo "Backend: http://localhost:8080"
-echo "Frontend: http://localhost:5173"
+echo ""
+echo "Home: http://localhost:8080/home/home.html"
 echo ""
 echo "Press Ctrl+C to stop both."
 
