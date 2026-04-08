@@ -7,7 +7,7 @@ lsof -ti :5173 | xargs kill -9 2>/dev/null || true
 
 # Start backend
 source .venv/bin/activate
-python3 toolkit/server/serve.py --dataset RU_AFR_EXPERIMENT --port 8080 &
+python3 toolkit/server/serve.py --port 8080 &
 BACKEND_PID=$!
 
 # Start frontend
