@@ -431,9 +431,9 @@ function renderNeighborList() {
                 <div class="ni-label" style="color:${typeColor(n.type)}">${esc(n.label)}</div>
                 <div class="ni-meta">
                     ${n.type} wt=${n.weight} ${n.semantic ? 'SEMANTIC' : 'CO-OCCUR'}
-                    ${n.filename ? '| ' + esc(n.filename.replace('.md', '').substring(0, 40)) : ''}
+                    ${n.filename ? '| ' + esc(n.filename.replace('.md', '')) : ''}
                 </div>
-                ${n.context ? `<div class="ni-context">${esc(n.context.substring(0, 150))}...</div>` : ''}
+                ${n.context ? `<div class="ni-context" style="color:#fffef9">${esc(n.context.substring(0, 300))}</div>` : ''}
             </div>
         `).join('')}
     `;
